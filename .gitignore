@@ -1,0 +1,21 @@
+docs/
+data/
+venv/
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+*.py[cod]
+__pycache__/
+*.so
+*~
+notes.md
+snippets.md
+app.db
+fhe.log*
+
+# due to using tox and pytest
+.tox
+.cache
+*.sqlite3
