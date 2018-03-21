@@ -10,7 +10,9 @@ dist/
 __pycache__/
 *.so
 *~
-notes.md
+notes*.md
+settings_production.py
+settings_user.py
 snippets.md
 app.db
 fhe.log*
