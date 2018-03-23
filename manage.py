@@ -6,6 +6,7 @@ import time
 import sys
 import json
 import requests
+import urllib
 from dateutil.parser import parse
 from random import shuffle
 from pathlib import Path
@@ -67,14 +68,6 @@ class ImportCsv(Command):
 
     """
 
-    # def validate_doi(self, doi):
-    #     """
-    #
-    #
-    #         https://www.crossref.org/blog/dois-and-matching-regular-expressions/
-    #     """
-    #     return False
-
     def run(self):
         df_testsize = 5
 
@@ -110,8 +103,8 @@ class ImportCsv(Command):
         df['ncbi_ts'] = None
         df['ncbi_errmsg'] = None
         params = {
-            'email': 'aenkhbay@sfu.ca',
-            'tool': 'ScholCommLab ID Crawler - scholcommlab.ca',
+            'email': app.config['NCBI_EMAIL'],
+            'tool': app.config['NCBI_TOOL'],
             'idtype': 'doi',
             'versions': 'no',
             'format': 'json'
@@ -175,6 +168,10 @@ class ImportCsv(Command):
             df.loc[doi, 'doi_resolve_ts'] = now
         print(df[:5])
 
+        # url's erstellen, mergen,
+        # pubmed baseurl: https://ncbi.nlm.nih.gov/pubmed/{}
+        # pubmedcentral baseurl: https://ncbi.nlm.nih.gov/pmc/articles/PMC{}/
+
         # save data to database
         num_added = 0
         num_already_in = 0
@@ -204,22 +201,122 @@ class ImportCsv(Command):
         print(num_already_in, ' publications already in database.')
 
 
-class FacebookRequest(Command):
+class RequestFacebook(Command):
     """ Runs the Facebook Open Graph API request.
 
     """
 
     def run(self):
-        print("hello world")
+        pubs = Publication.query.all()
+        df = pd.DataFrame()
+        df['og_obj'] = None
+        df['og_eng'] = None
+        df['og_err'] = None
+        df['ts'] = None
 
+        for row in df.itertuples():
+            now = datetime.datetime.now()
+            url = row.url
+            og_object = None
+            og_engagement = None
+            og_error = None
 
-class AltmetricsRequest(Command):
+            try:
+                fb_response = fb_graph.get_object(
+                    id=urllib.parse.quote_plus(url),
+                    fields="engagement, og_object"
+                )
+
+                if 'og_object' in fb_response:
+                    og_object = fb_response['og_object']
+                if 'engagement' in fb_response:
+                    og_engagement = fb_response['engagement']
+            except Exception as e:
+                og_error = e
+
+            if og_object:
+                df.loc[(df.doi == row.doi) & (df.type == row.type), 'og_obj'] = json.dumps(og_object)
+            if og_engagement:
+                df.loc[(df.doi == row.doi) & (df.type == row.type), 'og_eng'] = json.dumps(og_engagement)
+            if og_error:
+                df.loc[(df.doi == row.doi) & (df.type == row.type), 'og_err'] = str(og_error)
+            df.loc[(df.doi == row.doi) & (df.type == row.type), 'ts'] = str(now)
+
+            # extract shares
+            result_cols = [x + "_shares" for x in url_types] + [x + "_ogid" for x in url_types]
+            shares = pd.DataFrame(columns=result_cols, index=df.doi.unique())
+            shares.index.name = "doi"
+
+            rows = list(df[df.og_obj.notnull()].itertuples())
+            for row in tqdm_notebook(rows, total=len(rows)):
+                if row.type == "pkp_url":
+                    shares.loc[row.doi, "pkp_ogid"] = str(json.loads(row.og_obj)['id'])
+                    shares.loc[row.doi, "pkp_shares"] = float(json.loads(row.og_eng)['share_count'])
+                elif row.type == "doi_url":
+                    shares.loc[row.doi, "doi_ogid"] = str(json.loads(row.og_obj)['id'])
+                    shares.loc[row.doi, "doi_shares"] = float(json.loads(row.og_eng)['share_count'])
+                elif row.type == "pmid_url":
+                    shares.loc[row.doi, "pmid_ogid"] = str(json.loads(row.og_obj)['id'])
+                    shares.loc[row.doi, "pmid_shares"] = float(json.loads(row.og_eng)['share_count'])
+                elif row.type == "pmc_url":
+                    shares.loc[row.doi, "pmc_ogid"] = str(json.loads(row.og_obj)['id'])
+                    shares.loc[row.doi, "pmc_shares"] = float(json.loads(row.og_eng)['share_count'])
+
+class RequestAltmetrics(Command):
     """ Runs the Altmetrics API request.
 
     """
 
     def run(self):
-        print("hello world")
+
+        pubs = Publication.query.all()
+        # leere URLs und Duplikate entfernen
+        # tabelle pivotieren, so dass jeder type (pkp_url, doi_url, pmc_url, pmid_url) in einer eigenen Reihe
+        result_cols = ['am_resp', 'am_err', 'ts']
+        dois = pubs.something()
+        df = pd.DataFrame(columns=result_cols, index=dois)
+
+        now = datetime.datetime.now()
+
+        for row in df.itertuples():
+            try:
+                am_resp = altmetric.doi(doi=row.Index, fetch=True)
+                am_err = None
+            except Exception as e:
+                am_resp = None
+                am_err = e
+
+            df.loc[row.Index, 'am_resp'] = json.dumps(am_resp)
+            df.loc[row.Index, 'am_err'] = str(am_err)
+            df.loc[row.Index, 'ts'] = str(now)
+        # extract shares
+        result_cols = ['am_shares', 'am_id']
+        shares = pd.DataFrame(columns=result_cols, index=df.doi.unique())
+        shares.index.name = "doi"
+
+        rows = list(df[df.am_resp.notnull()].itertuples())
+        for row in tqdm_notebook(rows, total=len(rows)):
+            if pd.notnull(row.am_resp):
+                try:
+                    shares.loc[row.doi, "am_id"] = str(json.loads(row.am_resp)['altmetric_id'])
+                except:
+                    shares.loc[row.doi, "am_id"] = None
+                try:
+                    shares.loc[row.doi, "am_shares"] =  float(json.loads(row.am_resp)['counts']['facebook']['posts_count'])
+                except:
+                    shares.loc[row.doi, "am_shares"] = 0.0
+            #if pd.notnull(row.og_eng):
+            #    shares.loc[row.doi, row.type.split("_")[0]] =  int(json.loads(row.og_eng)['share_count'])
+
+
+
+class RequestCrossref(Command):
+    """ Requests the CrossRef API.
+
+    """
+
+    def run(self):
+        return True
 
 
 class ExportData(Command):
