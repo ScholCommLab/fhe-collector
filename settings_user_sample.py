@@ -1,3 +1,4 @@
+ADMIN = ''
 FB_APP_ID = ''
 FB_APP_SECRET = ''
 ALTMETRIC_KEY = ''

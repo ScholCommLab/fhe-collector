@@ -1,14 +1,13 @@
+import os
 import logging
 from logging.handlers import RotatingFileHandler
-import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
-from settings_default import Development, Production, Testing
 
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -19,14 +18,19 @@ def create_app():
 
     """
     app = Flask(__name__)
-    app.config.from_envvar('YOURAPPLICATION_SETTINGS')
-    if app.config['APP_MODE'] == 'dev':
-        app.config.from_object(Development)
-    elif app.config['APP_MODE'] == 'prod':
-        app.config.from_object(Production)
-    elif app.config['APP_MODE'] == 'test':
-        app.config.from_object(Testing)
     app.config.from_object('settings_user')
+    app_mode = os.environ.get('YOURAPPLICATION_MODE', default='development')
+    if app_mode == 'development':
+        app.config['ENV'] = 'DEVELOPMENT'
+        app.config.from_object('settings_default.Development')
+    elif app_mode == 'production':
+        app.config['ENV'] = 'PRODUCTION'
+        # order of settings loading: 1. settings file, 2. environment variable DATABASE_URL, 3. environment variable SQLALCHEMY_DATABASE_URI
+        app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
+        app.config.from_object('settings_default.Production')
+    elif app_mode == 'testing':
+        app.config['ENV'] = 'TEST'
+        app.config.from_object('settings_default.Testing')
     db.init_app(app)
     migrate.init_app(app, db)
 
@@ -41,11 +45,10 @@ def create_app():
 
     if not app.debug and not app.testing:
 
-        # Logging
+        # Logging (only production)
         if not os.path.exists('logs'):
             os.mkdir('logs')
-        file_handler = RotatingFileHandler('logs/fhe.log', maxBytes=10240,
-                                           backupCount=10)
+        file_handler = RotatingFileHandler('logs/fhe.log', maxBytes=10240, backupCount=10)
         file_handler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
         file_handler.setLevel(logging.INFO)

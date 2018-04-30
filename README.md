@@ -55,11 +55,15 @@ Rename the [settings_user_sample.py](settings_user_sample.py) file to 'settings_
 
 Also rename the [settings_production_sample.py](settings_production_sample.py) file to 'settings_production.py' and add the missing database settings:
 
-Then set these environment variables inside your shell, so the right settings file is loaded when the app starts.
+Then set these environment variables inside your shell, so the right settings file is loaded when the app starts. There are three application modes:
+
+* 'development':
+* 'testing':
+* 'production':
 
 ```
 export FLASK_APP=fhe.py
-export YOURAPPLICATION_SETTINGS='/PATH/TO/VHOST/fhe-collector/settings_production.py'
+export YOURAPPLICATION_MODE='development'
 ```
 
 **Start app**
@@ -79,11 +83,16 @@ flask db upgrade
 
 ### Testing
 
+**pytest**
+
 ```
 pytest
 ```
 
+**Coverage**
+
 ```
-coverage run --source='.'
+coverage run fhe.py  
 coverage report
+coverage html
 ```

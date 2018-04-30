@@ -5,29 +5,31 @@ from app import create_app
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
 
 
-class TestConfig:
-    def test_dev_config(self):
+class TestConfiguration:
+    def test_development_settings(self):
         """ Tests if the development config loads correctly """
 
-        app = create_app('config.Development')
+        os.environ['YOURAPPLICATION_MODE'] = 'development'
+        app = create_app()
 
         assert app.config['DEBUG'] is True
         assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
 
-    def test_test_config(self):
+    def test_testing_settings(self):
         """ Tests if the test config loads correctly """
 
-        app = create_app('config.Testing')
+        os.environ['YOURAPPLICATION_MODE'] = 'testing'
+        app = create_app()
 
-        assert app.config['DEBUG'] is True
         assert app.config['SQLALCHEMY_ECHO'] is True
         assert app.config['TESTING'] is True
         assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
 
-    def test_prod_config(self):
+    def test_production_settings(self):
         """ Tests if the production config loads correctly """
 
-        app = create_app('config.Production')
+        os.environ['YOURAPPLICATION_MODE'] = 'production'
+        app = create_app()
 
-        assert app.config['SQLALCHEMY_DATABASE_URI'] == 'postgresql+psycopg2://root:pass@localhost/fhe'
         assert app.config['DEBUG'] is False
+        assert app.config['TESTING'] is False
