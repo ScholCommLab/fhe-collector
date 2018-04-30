@@ -45,15 +45,17 @@ sudo -u $USERNAME_ADMIN createdb -O $USERNAME_OWNER fhe_collector
 flask db init
 ```
 
-**Set settings**
+**User and database settings**
 
-Rename the [settings_production_sample.py](settings_production_sample.py) file to 'settings_production.py' and add the missing information about:
+Rename the [settings_user_sample.py](settings_user_sample.py) file to 'settings_user.py' and add the missing user settings:
 
-* postgresql database
 * facebook app
 * flask app secret key
+* NCBI API account
 
-Then set these environment variables inside your shell, so the right settings file is used to run the app.
+Also rename the [settings_production_sample.py](settings_production_sample.py) file to 'settings_production.py' and add the missing database settings:
+
+Then set these environment variables inside your shell, so the right settings file is loaded when the app starts.
 
 ```
 export FLASK_APP=fhe.py

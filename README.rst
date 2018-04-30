@@ -1,3 +1,0 @@
-=====
-Facebook Hidden Engagement Microservice
-=====
