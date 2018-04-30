@@ -1,0 +1,6 @@
+FB_APP_ID = ''
+FB_APP_SECRET = ''
+ALTMETRIC_KEY = ''
+NCBI_EMAIL = ''
+NCBI_TOOL = ''
+SECRET_KEY = ''

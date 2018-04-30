@@ -12,6 +12,8 @@ __pycache__/
 *~
 notes*.md
 settings_production.py
+settings_testing.py
+settings_development.py
 settings_user.py
 snippets.md
 app.db
