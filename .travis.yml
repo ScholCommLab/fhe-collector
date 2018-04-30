@@ -1,4 +1,5 @@
 language: python
+
 python:
   - "2.7"
   - "3.3"
@@ -6,9 +7,21 @@ python:
   - "3.5"
   - "3.6"
   - "pypy"
-# command to install dependencies
+
+services: postgresql
+
 install:
   - "pip install -r requirements.txt"
-# command to run tests
+
+before_script:
+  - psql -c "CREATE DATABASE travisdb;" -U postgres
+  - python src/manage.py migrate --noinput
+
 script:
-  - make test
+  - pytest
+
+notifications:
+  email:
+    recipients:
+      - mail@stefankasberger.at
+    on_failure: always

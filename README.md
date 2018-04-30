@@ -1,9 +1,10 @@
 # Facebook Hidden Engagement Microservice
-======================
 
 Simon Fraser University - Scholarly Communication Lab
 
 Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar](https://github.com/Bubblbu).
+
+[![Build Status](https://travis-ci.org/ScholCommLab/fhe-collector.svg?branch=master)](https://travis-ci.org/ScholCommLab/fhe-collector)
 
 ## SETUP
 
@@ -41,6 +42,6 @@ sudo -u $USERNAME_ADMIN createdb -O $USERNAME_OWNER myProject_myApp
 ```
 
 ```
-coverage run --source='.' 
+coverage run --source='.'
 coverage report
 ```
