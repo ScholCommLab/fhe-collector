@@ -16,8 +16,7 @@ before_script:
   - psql -c "CREATE DATABASE travisdb;" -U postgres
   - export FLASK_DEBUG=1
   - export APPLICATION_MODE="TESTING"
-  - export DEBUG_TB_ENABLED=False
-  - export USER_SETTINGS_EXIST=False
+  - export TRAVIS=True
 
 script:
   - pytest

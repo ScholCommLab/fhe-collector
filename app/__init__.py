@@ -28,8 +28,8 @@ def create_app():
     """
     app = Flask(__name__)
     app_mode = os.getenv('YOURAPPLICATION_MODE', default='DEVELOPMENT')
-    user_settings = os.getenv('USER_SETTINGS_EXIST', default=True)
-    if user_settings:
+    travis = os.getenv('TRAVIS', default=False)
+    if not travis:
         app.config.from_object('settings_user')
     if app_mode == 'DEVELOPMENT':
         app.config['ENV'] = 'DEVELOPMENT'
@@ -38,7 +38,8 @@ def create_app():
     elif app_mode == 'PRODUCTION':
         app.config['ENV'] = 'PRODUCTION'
         # order of settings loading: 1. settings file, 2. environment variable DATABASE_URL, 3. environment variable SQLALCHEMY_DATABASE_URI
-        app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
+        if not travis:
+            app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
         app.config.from_object('settings_default.Production')
     elif app_mode == 'TESTING':
         app.config['ENV'] = 'TEST'
