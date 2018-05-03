@@ -1,4 +1,3 @@
-docs/
 data/
 venv/
 build/
@@ -23,3 +22,4 @@ fhe.log*
 .tox
 .cache
 *.sqlite3
+.coverage

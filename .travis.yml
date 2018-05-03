@@ -20,10 +20,13 @@ before_script:
   - export FLASK_DEBUG=1
 
 script:
-  - pytest
+  - pytest --doctest-modules --pep8 coveralls -v --cov coveralls --cov-report term-missing
 
 notifications:
   email:
     recipients:
       - mail@stefankasberger.at
     on_failure: always
+
+after_success:
+  - coveralls

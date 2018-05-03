@@ -92,10 +92,18 @@ pytest
 
 **Coverage**
 
+https://github.com/z4r/python-coveralls
+https://pypi.org/project/pytest-cov/
+
 ```
 coverage run fhe.py  
 coverage report
 coverage html
+```
+
+Run tests with coverage.
+```
+pytest --cov-report html --cov=app tests/
 ```
 
 ### Documentation
