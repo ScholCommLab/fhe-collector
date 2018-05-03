@@ -20,7 +20,7 @@ before_script:
   - export FLASK_DEBUG=1
 
 script:
-  - pytest --doctest-modules --pep8 coveralls -v --cov coveralls --cov-report term-missing
+  - pytest 
 
 notifications:
   email:
