@@ -19,7 +19,7 @@ before_script:
   - export TRAVIS=True
 
 script:
-  - pytest tests/ --doctest-modules --pep8 coveralls -v --cov coveralls --cov-report term-missing
+  - pytest --doctest-modules --pep8 coveralls -v --cov=app --cov-report term-missing tests/
 
 after_success:
   - coveralls
