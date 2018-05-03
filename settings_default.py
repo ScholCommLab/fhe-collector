@@ -19,7 +19,6 @@ class Development(Config):
     """
     DEBUG = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
-    DEBUG_TB_ENABLED = True
     if os.environ.get('DATABASE_URL') is None:
         SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
     else:
@@ -32,7 +31,6 @@ class Testing(Config):
     """
     TESTING = True
     SQLALCHEMY_ECHO = True
-    DEBUG_TB_ENABLED = False
     if os.environ.get('DATABASE_URL') is None:
         SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
     else:
@@ -43,7 +41,6 @@ class Production(Config):
     """
 
     """
-    DEBUG_TB_ENABLED = False
     if os.environ.get('DATABASE_URL'):
         SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     if os.environ.get('SQLALCHEMY_DATABASE_URI'):

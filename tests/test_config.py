@@ -25,7 +25,6 @@ class TestConfiguration:
         assert app.config['SQLALCHEMY_ECHO'] is True
         assert app.config['TESTING'] is True
         assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
-        assert app.config['DEBUG_TB_ENABLED'] is False
 
     def test_production_settings(self):
         """ Tests if the production config loads correctly """
@@ -35,4 +34,3 @@ class TestConfiguration:
 
         assert app.config['DEBUG'] is False
         assert app.config['TESTING'] is False
-        assert app.config['DEBUG_TB_ENABLED'] is False
