@@ -36,7 +36,6 @@ def create_app():
         app.config.from_object('settings_default.Development')
         DebugToolbarExtension(app)
     elif app_mode == 'PRODUCTION':
-        app.config.from_object('settings_user')
         app.config['ENV'] = 'PRODUCTION'
         # order of settings loading: 1. settings file, 2. environment variable DATABASE_URL, 3. environment variable SQLALCHEMY_DATABASE_URI
         app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
