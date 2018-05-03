@@ -19,13 +19,13 @@ before_script:
   - export TRAVIS=True
 
 script:
-  - pytest
+  - pytest tests/ --doctest-modules --pep8 coveralls -v --cov coveralls --cov-report term-missing
+
+after_success:
+  - coveralls
 
 notifications:
   email:
     recipients:
       - mail@stefankasberger.at
     on_failure: always
-
-after_success:
-  - coveralls
