@@ -17,6 +17,7 @@ before_script:
   - export FLASK_DEBUG=1
   - export APPLICATION_MODE="TESTING"
   - export DEBUG_TB_ENABLED=False
+  - export USER_SETTINGS_EXIST=False
 
 script:
   - pytest

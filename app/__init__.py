@@ -28,8 +28,10 @@ def create_app():
     """
     app = Flask(__name__)
     app_mode = os.getenv('YOURAPPLICATION_MODE', default='DEVELOPMENT')
-    if app_mode == 'DEVELOPMENT':
+    user_settings = os.getenv('USER_SETTINGS_EXIST')
+    if user_settings:
         app.config.from_object('settings_user')
+    if app_mode == 'DEVELOPMENT':
         app.config['ENV'] = 'DEVELOPMENT'
         app.config.from_object('settings_default.Development')
         DebugToolbarExtension(app)
