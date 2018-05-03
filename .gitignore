@@ -15,11 +15,15 @@ settings_testing.py
 settings_development.py
 settings_user.py
 snippets.md
-app.db
 fhe.log*
-
-# due to using tox and pytest
-.tox
 .cache
+app.db
 *.sqlite3
 .coverage
+docs/coverage_html_report/
+intern/
+.pytest_cache/
+migrations/script.py.mako
+migrations/README
+migrations/env.py
+migrations/alembic.ini

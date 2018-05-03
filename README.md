@@ -8,13 +8,17 @@ Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar]
 
 [![Coverage Status](https://coveralls.io/repos/github/ScholCommLab/fhe-collector/badge.svg?branch=master)](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master)
 
+**Features**
+
+* Tests in [pytest-flask](http://pytest-flask.readthedocs.io/) and executed on [Travis CI](https://travis-ci.org/ScholCommLab/fhe-collector). Test coverage through [pytest-cov](https://pypi.org/project/pytest-cov/) and [python-coveralls](https://github.com/z4r/python-coveralls), viewable on (see [coveralls.io](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master)).
+* auto-generated documentation through functions and class documentation with [sphinx](http://www.sphinx-doc.org/).
+
 ## SETUP
 
 **Prerequisites**
 
 * registered Facebook app
 * Configured server, which can deliver Flask apps
-* sphinx
 
 **Download Flask app**
 
@@ -94,12 +98,9 @@ pytest
 
 **Coverage**
 
-https://github.com/z4r/python-coveralls
-https://pypi.org/project/pytest-cov/
-
 ```
 coverage run fhe.py  
-coverage report
+coverage report -m
 coverage html
 ```
 
@@ -129,3 +130,21 @@ sphinx-build -b html docs/source docs/build
 sphinx-apidoc -f -o source ../app
 make html
 ```
+
+## GLOSSAR
+
+**Coverage.py**
+
+Coverage.py is a tool for measuring code coverage of Python programs. It monitors your program, noting which parts of the code have been executed, then analyzes the source to identify code that could have been executed but was not. Coverage measurement is typically used to gauge the effectiveness of tests. It can show which parts of your code are being exercised by tests, and which are not.
+
+**Coveralls.io**
+
+Coveralls is a web service to help you track your code coverage over time, and ensure that all your new code is fully covered.
+
+**Travis CI**
+
+Travis CI is a hosted, distributed continuous integration service used to build and test software projects hosted at GitHub.
+
+**Sphinx**
+
+Sphinx is a tool that makes it easy to create intelligent and beautiful documentation. It can create reports in pdf and html.

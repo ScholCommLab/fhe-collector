@@ -8,12 +8,15 @@ python:
 
 services: postgresql
 
+addons:
+  postgresql: "10"
+
 install:
   - "pip install -r requirements.txt"
 
 before_script:
   - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe.py"
-  - psql -c "CREATE DATABASE travisdb;" -U postgres
+  - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
   - export FLASK_DEBUG=1
   - export APPLICATION_MODE="TESTING"
   - export TRAVIS=True
@@ -28,4 +31,5 @@ notifications:
   email:
     recipients:
       - mail@stefankasberger.at
+    on_success: never
     on_failure: always
