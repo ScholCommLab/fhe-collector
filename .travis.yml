@@ -17,6 +17,8 @@ before_script:
   - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe.py"
   - psql -c "CREATE DATABASE travisdb;" -U postgres
   - export FLASK_DEBUG=1
+  - export APPLICATION_MODE="TESTING"
+  - export DEBUG_TB_ENABLED=False
 
 script:
   - pytest
