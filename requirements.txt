@@ -1,5 +1,6 @@
 alabaster==0.7.10
 alembic==0.9.8
+apipkg==1.4
 attrs==17.4.0
 Babel==2.5.3
 blinker==1.4
@@ -10,6 +11,7 @@ coverage==4.0.3
 coveralls==1.3.0
 docopt==0.6.2
 docutils==0.14
+execnet==1.5.0
 flake8==3.5.0
 Flask==1.0.1
 Flask-DebugToolbar==0.10.1
@@ -29,6 +31,7 @@ mccabe==0.6.1
 numpy==1.14.2
 packaging==17.1
 pandas==0.22.0
+pep8==1.7.1
 pluggy==0.6.0
 py==1.5.2
 pycodestyle==2.3.1
@@ -36,8 +39,10 @@ pyflakes==1.6.0
 Pygments==2.2.0
 pyparsing==2.2.0
 pytest==3.4.2
+pytest-cache==1.0
 pytest-cov==2.5.1
 pytest-flask==0.10.0
+pytest-pep8==1.0.6
 python-coveralls==2.9.1
 python-dateutil==2.7.0
 python-dotenv==0.8.2

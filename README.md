@@ -106,7 +106,20 @@ coverage html
 Run tests with coverage.
 ```
 pytest --cov-report html --cov=app tests/
+
 ```
+**Coveralls**
+
+Local development
+```
+pytest tests/ --doctest-modules -v --cov=app
+```
+
+Travis
+```
+pytest tests/ --doctest-modules -v --cov coveralls --cov-report term-missing
+```
+
 
 ### Documentation
 
