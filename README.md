@@ -6,6 +6,8 @@ Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar]
 
 [![Build Status](https://travis-ci.org/ScholCommLab/fhe-collector.svg?branch=master)](https://travis-ci.org/ScholCommLab/fhe-collector)
 
+[![Coverage Status](https://coveralls.io/repos/github/ScholCommLab/fhe-collector/badge.svg?branch=master)](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master)
+
 ## SETUP
 
 **Prerequisites**
