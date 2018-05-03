@@ -34,7 +34,8 @@ def create_app():
     if app_mode == 'DEVELOPMENT':
         app.config['ENV'] = 'DEVELOPMENT'
         app.config.from_object('settings_default.Development')
-        DebugToolbarExtension(app)
+        if not travis:
+            DebugToolbarExtension(app)
     elif app_mode == 'PRODUCTION':
         app.config['ENV'] = 'PRODUCTION'
         # order of settings loading: 1. settings file, 2. environment variable DATABASE_URL, 3. environment variable SQLALCHEMY_DATABASE_URI
