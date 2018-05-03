@@ -28,7 +28,7 @@ def create_app():
     """
     app = Flask(__name__)
     app_mode = os.getenv('YOURAPPLICATION_MODE', default='DEVELOPMENT')
-    user_settings = os.getenv('USER_SETTINGS_EXIST')
+    user_settings = os.getenv('USER_SETTINGS_EXIST', default=True)
     if user_settings:
         app.config.from_object('settings_user')
     if app_mode == 'DEVELOPMENT':
