@@ -1,3 +1,12 @@
+"""
+.. module::
+    :platform: Linux
+    :synopsis: Web-app to collect facebook metrics.
+
+.. moduleauthor:: Stefan Kasberger <mail@stefankasberger.at>
+"""
+
+
 import os
 import logging
 from logging.handlers import RotatingFileHandler

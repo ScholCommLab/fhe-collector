@@ -3,6 +3,10 @@ from app import db
 
 
 class Publication(db.Model):
+    """Publication model.
+
+    Defines the publication data type with it's methods for useage of the Flask ORM.
+    """
     doi = db.Column(db.String(64), primary_key=True)
     pub_date = db.Column(db.DateTime())
     origin = db.Column(db.String(256))  # 'import FILENAME' or 'api'
@@ -12,6 +16,11 @@ class Publication(db.Model):
     #     self.date = datetime.datetime.strptime(date, '%Y-%m-%d')
 
     def __repr__(self):
+        """Default output method.
+
+        Args:
+            None
+        """
         return '<Publication {}>'.format(self.doi)
 
 

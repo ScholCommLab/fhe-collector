@@ -12,6 +12,7 @@ Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar]
 
 * registered Facebook app
 * Configured server, which can deliver Flask apps
+* sphinx
 
 **Download Flask app**
 
@@ -95,4 +96,13 @@ pytest
 coverage run fhe.py  
 coverage report
 coverage html
+```
+
+### Documentation
+
+```
+cd docs/
+sphinx-build -b html docs/source docs/build
+sphinx-apidoc -f -o source ../app
+make html
 ```
