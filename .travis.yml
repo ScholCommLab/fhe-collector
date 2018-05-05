@@ -11,6 +11,9 @@ services: postgresql
 addons:
   postgresql: "10"
 
+before_install:
+  - export YOURAPPLICATION_MODE=TESTING
+
 install:
   - "pip install -r requirements.txt"
 
