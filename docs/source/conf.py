@@ -19,14 +19,14 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'fhe_collector'
+project = 'FHE Collector'
 copyright = '2018, Public Knowledge Project'
 author = 'Public Knowledge Project'
 
 # The short X.Y version
-version = ''
+version = '0.1'
 # The full version, including alpha/beta/rc tags
-release = 'v1.0'
+release = '0.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,6 +40,7 @@ release = 'v1.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
     'sphinx.ext.coverage',
 ]
 

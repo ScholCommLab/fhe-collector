@@ -8,9 +8,6 @@ python:
 
 services: postgresql
 
-addons:
-  postgresql: "10"
-
 before_install:
   - export YOURAPPLICATION_MODE=TESTING
 
@@ -21,8 +18,6 @@ before_script:
   - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe.py"
   - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
   - export FLASK_DEBUG=1
-  - export APPLICATION_MODE="TESTING"
-  - export TRAVIS=True
 
 script:
   - pytest --doctest-modules --cov=app --cov-report term-missing tests/

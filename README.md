@@ -126,8 +126,8 @@ pytest tests/ --doctest-modules -v --cov coveralls --cov-report term-missing
 
 ```
 cd docs/
-sphinx-build -b html docs/source docs/build
-sphinx-apidoc -f -o source ../app
+sphinx-build -b html source build
+sphinx-apidoc -f -o source ..
 make html
 ```
 
