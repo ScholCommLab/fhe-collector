@@ -23,7 +23,8 @@ class TestConfiguration:
 
         assert app.config['SQLALCHEMY_ECHO'] is True
         assert app.config['TESTING'] is True
-        assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
+        if 'TRAVIS' not in os.environ:
+            assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
 
     def test_production_settings(self):
         """ Tests if the production config loads correctly """
