@@ -109,6 +109,7 @@ Execute the test-scripts.
 ```
 export FLASK_APP=fhe.py
 export YOURAPPLICATION_MODE='TESTING'
+export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
 
 **pytest**
