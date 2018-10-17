@@ -28,23 +28,29 @@ def create_app():
     """
     app = Flask(__name__)
     YOURAPPLICATION_MODE = os.getenv('YOURAPPLICATION_MODE', default='DEVELOPMENT')
+    print('* Updating App Mode to: ' + YOURAPPLICATION_MODE)
     travis = os.getenv('TRAVIS', default=False)
     if not travis:
+        print('* Loading User Settings.')
         app.config.from_object('settings_user')
     if YOURAPPLICATION_MODE == 'DEVELOPMENT':
+        print('* Loading Development Settings.')
         app.config['ENV'] = 'DEVELOPMENT'
         app.config.from_object('settings_default.Development')
         if not travis:
             DebugToolbarExtension(app)
     elif YOURAPPLICATION_MODE == 'PRODUCTION':
+        print('* Loading Production Settings.')
         app.config['ENV'] = 'PRODUCTION'
         # order of settings loading: 1. settings file, 2. environment variable DATABASE_URL, 3. environment variable SQLALCHEMY_DATABASE_URI
         if not travis:
             app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
         app.config.from_object('settings_default.Production')
     elif YOURAPPLICATION_MODE == 'TESTING':
-        app.config['ENV'] = 'TEST'
+        print('* Loading Test Settings.')
+        app.config['ENV'] = 'TESTING'
         app.config.from_object('settings_default.Testing')
+    print('* Database: ' + app.config['SQLALCHEMY_DATABASE_URI'])
     db.init_app(app)
     migrate.init_app(app, db)
 

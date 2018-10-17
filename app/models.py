@@ -48,18 +48,6 @@ class FBRequest(db.Model):
         return '<Facebook Request {}>'.format(self.id)
 
 
-class AltmetricsRequest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    publication_doi = db.Column(db.String(64), db.ForeignKey('publication.doi'), nullable=False)
-    request = db.Column(db.Text())
-    response = db.Column(db.Text())
-    timestamp = db.Column(db.DateTime())
-    error = db.Column(db.Boolean())
-
-    def __repr__(self):
-        return '<Altmetrics Request {}>'.format(self.id)
-
-
 class NCBIRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url_url = db.Column(db.String(256), db.ForeignKey('url.url'), nullable=False)
