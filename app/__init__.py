@@ -36,6 +36,7 @@ def create_app():
     if YOURAPPLICATION_MODE == 'DEVELOPMENT':
         print('* Loading Development Settings.')
         app.config['ENV'] = 'DEVELOPMENT'
+        app.config.from_pyfile(BASE_DIR+'/settings_development.py', silent=True)
         app.config.from_object('settings_default.Development')
         if not travis:
             DebugToolbarExtension(app)
