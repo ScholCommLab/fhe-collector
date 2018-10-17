@@ -19,6 +19,7 @@ class TestConfiguration:
         assert app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] is False
         assert app.config['USER_SETTINGS_EXIST'] is True
         assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] == False
+
     def test_create_app_testing(self):
         """
         Tests if the app starts correctly.

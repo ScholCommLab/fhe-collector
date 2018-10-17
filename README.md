@@ -76,18 +76,14 @@ Rename the [settings_user_sample.py](settings_user_sample.py) file to `settings_
 
 Then set the `YOURAPPLICATION_MODE` variable inside your shell, so the right settings file is loaded when the app starts. There are three application modes:
 
-* 'development': is the default one.
-* 'testing': to execute the tests.
-* 'production': to run in production mode.
-
-```
-export FLASK_APP=fhe.py
-export YOURAPPLICATION_MODE='DEVELOPMENT'
-```
+* 'DEVELOPMENT': is the default one. Does not need to be set, unless it does not work as expected.
+* 'TESTING': to execute the tests.
+* 'PRODUCTION': to run in production mode.
 
 **Start app**
 
 ```
+export FLASK_APP=fhe.py
 flask run
 ```
 

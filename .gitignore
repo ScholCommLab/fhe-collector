@@ -20,6 +20,9 @@ fhe.log*
 app.db
 *.sqlite3
 .coverage
+docs/source/settings_user.rst
+docs/source/settings_development.rst
+docs/source/settings_production.rst
 docs/coverage_html_report/
 intern/
 .pytest_cache/
