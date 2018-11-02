@@ -131,7 +131,6 @@ Run tests with coverage to create a html report as an output.
 
 ```
 pytest --cov-report html --cov=app tests/
-
 ```
 **Coveralls**
 
