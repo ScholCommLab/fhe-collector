@@ -11,6 +11,11 @@ Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar]
 * Tests wirtten in [pytest-flask](http://pytest-flask.readthedocs.io/) and executed with [Travis CI](https://travis-ci.org/ScholCommLab/fhe-collector). Test coverage by [pytest-cov](https://pypi.org/project/pytest-cov/) and [python-coveralls](https://github.com/z4r/python-coveralls), viewable on [coveralls.io](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master).
 * auto-generated documentation through functions and class documentation with [sphinx](http://www.sphinx-doc.org/).
 
+**Copyright**
+
+* Code:  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+* Documentation:  [![License: CC BY 4.0](https://licensebuttons.net/l/by/4.0/80x15.png)](https://creativecommons.org/licenses/by/4.0/)
+
 ## SETUP
 
 This instructions are to setup the development environment, which is also the default environment.
