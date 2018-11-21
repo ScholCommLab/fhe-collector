@@ -111,13 +111,18 @@ flask db upgrade
 
 ### Testing
 
-Execute the test-scripts.
+Set application mode and unset maybe existing database URI's.
 
 ```
 export FLASK_APP=fhe.py
 export YOURAPPLICATION_MODE='TESTING'
 ```
 
+If you set the database URI as an environment and you don't want to use it anymore, simply unset it.
+
+```
+unset SQLALCHEMY_DATABASE_URI
+```
 **pytest**
 
 ```
