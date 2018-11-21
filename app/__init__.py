@@ -22,11 +22,14 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 
+
 def create_app():
-    """
+    """Creates application and loads settings.
 
     """
     app = Flask(__name__)
+
+
     YOURAPPLICATION_MODE = os.getenv('YOURAPPLICATION_MODE', default='DEVELOPMENT')
     print('* Updating App Mode to: ' + YOURAPPLICATION_MODE)
     travis = os.getenv('TRAVIS', default=False)
@@ -74,6 +77,58 @@ def create_app():
 
         app.logger.setLevel(logging.INFO)
         app.logger.info('Facebook Hidden Engagement')
+
+    import click
+    @app.cli.command()
+    @click.option('--filename', default=None)
+    def import_csv(filename):
+        """Import CSV file with DOI's.
+
+        Args:
+            filename: filename with path.
+        """
+        import pandas as pd
+        from app.models import Doi
+
+        if not filename:
+            filename = 'app/static/data/PKP_20171220_100.csv'
+
+        df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
+        df = df.drop_duplicates(subset='doi')
+        num_rows = len(df.index)
+        num_added = 0
+        num_already_in = 0
+        for index, row in df.iloc[:num_rows].iterrows():
+            result = Doi.query.filter_by(doi=row['doi']).first()
+            if result is None:
+                doi = Doi(
+                    doi=row['doi'],
+                    source_type='file',
+                    source_file=filename,
+                    source_json=None
+                )
+                db.session.add(doi)
+                num_added += 1
+            else:
+                num_already_in += 1
+        db.session.commit()
+        print(num_added, 'doi\'s added to database.')
+        print(num_already_in, 'doi\'s already in database.')
+
+    @app.cli.command()
+    def delete_all_dois():
+        """Delete all doi entries.
+
+        """
+
+        from app.models import Doi
+        result = Doi.query.filter_by().all()
+        num_deleted = 0
+        for entry in result:
+            db.session.delete(entry)
+            num_deleted += 1
+        db.session.commit()
+        print(num_deleted, 'doi\'s deleted from database.')
 
     return app
 
