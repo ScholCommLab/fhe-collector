@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class Doi(db.Model):
-    """Publication model.
+    """Doi model.
 
     Defines the publication data type with it's methods for useage of the Flask ORM.
     """
@@ -27,15 +27,23 @@ class Doi(db.Model):
         return '<DOI {}>'.format(self.doi)
 
 
-# class Url(db.Model):
-#     url = db.Column(db.String(256), primary_key=True)
-#     publication_doi = db.Column(db.String(64), db.ForeignKey('publication.doi'), nullable=False)
-#     url_type = db.Column(db.String(64))  # pubmedcentral, pubmed, doi.org,
-#     origin = db.Column(db.String(256))  # ncbi, doi.org, 'import FILENAME' or 'api'
-#     date_added = db.Column(db.DateTime())
-#
-#     def __repr__(self):
-#         return '<URL {}>'.format(self.url)
+class Url(db.Model):
+    """Url model."""
+    url = db.Column(db.String(256), primary_key=True)
+    doi = db.Column(db.String(64), db.ForeignKey('doi.doi'), nullable=False)
+    url_type = db.Column(db.String(64))  # 'pmcid', 'pmid' or 'doi.org',
+    url_source = db.Column(db.String(256))  # ncbi, doi.org, 'import FILENAME' or 'api'
+    date_added = db.Column(db.DateTime())
+
+    def __init__(self, url, doi, url_type, url_source):
+        self.url = url
+        self.doi = doi
+        self.url_type = url_type
+        self.url_source = url_source
+        self.date_added = datetime.now()
+
+    def __repr__(self):
+        return '<URL {}>'.format(self.url)
 
 
 # class FBRequest(db.Model):

@@ -7,6 +7,7 @@
 """
 
 
+import configparser
 import os
 import logging
 from logging.handlers import RotatingFileHandler
@@ -14,6 +15,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
+import click
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -22,13 +24,9 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 
-
 def create_app():
-    """Creates application and loads settings.
-
-    """
+    """Creates application and loads settings."""
     app = Flask(__name__)
-
 
     YOURAPPLICATION_MODE = os.getenv('YOURAPPLICATION_MODE', default='DEVELOPMENT')
     print('* Updating App Mode to: ' + YOURAPPLICATION_MODE)
@@ -78,10 +76,9 @@ def create_app():
         app.logger.setLevel(logging.INFO)
         app.logger.info('Facebook Hidden Engagement')
 
-    import click
     @app.cli.command()
     @click.option('--filename', default=None)
-    def import_csv(filename):
+    def import_dois_from_csv(filename):
         """Import CSV file with DOI's.
 
         Args:
@@ -90,8 +87,10 @@ def create_app():
         import pandas as pd
         from app.models import Doi
 
+        default_csv_filename = 'app/static/data/PKP_20171220_100.csv'
+
         if not filename:
-            filename = 'app/static/data/PKP_20171220_100.csv'
+            filename = default_csv_filename
 
         df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
         df = df.drop_duplicates(subset='doi')
@@ -99,10 +98,11 @@ def create_app():
         num_added = 0
         num_already_in = 0
         for index, row in df.iloc[:num_rows].iterrows():
-            result = Doi.query.filter_by(doi=row['doi']).first()
+            doi = row['doi']
+            result = Doi.query.filter_by(doi=doi).first()
             if result is None:
                 doi = Doi(
-                    doi=row['doi'],
+                    doi=doi,
                     source_type='file',
                     source_file=filename,
                     source_json=None
@@ -117,18 +117,96 @@ def create_app():
 
     @app.cli.command()
     def delete_all_dois():
-        """Delete all doi entries.
-
-        """
-
+        """Delete all doi entries."""
         from app.models import Doi
-        result = Doi.query.filter_by().all()
+        result = Doi.query.all()
         num_deleted = 0
-        for entry in result:
-            db.session.delete(entry)
+        for row in result:
+            db.session.delete(row)
             num_deleted += 1
+
         db.session.commit()
         print(num_deleted, 'doi\'s deleted from database.')
+
+    @app.cli.command()
+    @click.option('--filename', default=None)
+    def create_urls(filename):
+        """Create URL's from the identifier."""
+        from app.models import Doi, Url
+        result_doi = Doi.query.all()
+        num_added = 0
+        num_already_in = 0
+
+        for row in result_doi:
+            url = 'https://doi.org/' + str(row.doi)
+            result_url = Url.query.filter_by(url=url).first()
+            if result_url is None:
+                url = Url(
+                    url=url,
+                    doi=row.doi,
+                    url_type='dx.doi.org',
+                    url_source='created-from-doi'
+                )
+                db.session.add(url)
+                num_added += 1
+            else:
+                num_already_in += 1
+            url = 'http://dx.doi.org/' + str(row.doi)
+            result_url = Url.query.filter_by(url=url).first()
+            if result_url is None:
+                url = Url(
+                    url=url,
+                    doi=row.doi,
+                    url_type='doi.org',
+                    url_source='created-from-doi'
+                )
+                db.session.add(url)
+                num_added += 1
+            else:
+                num_already_in += 1
+        db.session.commit()
+        print(num_added, 'url\'s added to database.')
+        print(num_already_in, 'url\'s already in database.')
+
+    @app.cli.command()
+    def delete_all_urls():
+        """Delete all url entries."""
+        from app.models import Url
+        result = Url.query.all()
+        num_deleted = 0
+        for row in result:
+            db.session.delete(row)
+            num_deleted += 1
+
+        db.session.commit()
+        print(num_deleted, 'url\'s deleted from database.')
+
+
+    # @app.cli.command()
+    # def fb_request():
+    #     """Send facebook requests of URL's.
+    #
+    #     """
+    #
+        # import pickle
+        # from facebook import GraphAPI, GraphAPIError
+    #     config_file = ROOT_DIR + 'settings_user.ini'
+    #     Config = configparser.ConfigParser()
+    #     Config.read(config_file)
+    #
+    #     FACEBOOK_APP_ID = Config.get('facebook', 'app_id')
+    #     FACEBOOK_APP_SECRET = Config.get('facebook', 'app_secret')
+    #     FACEBOOK_USER_TOKEN = Config.get('facebook', 'user_token')
+    #     BATCHSIZE = Config.get('facebook', 'batch_size')
+
+        # batches = range(0, len(), BATCH_SIZE)
+
+    # @app.cli.command()
+    # def save_facebook_request_response():
+    #     """Save the response from facebook graph requests into the database.
+    #
+    #     """
+    #
 
     return app
 
