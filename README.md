@@ -83,10 +83,18 @@ Then set the `YOURAPPLICATION_MODE` variable inside your shell, so the right set
 * 'TESTING': to execute the tests.
 * 'PRODUCTION': to run in production mode.
 
+Set your database. The following example show how to connect to your postgreSQL database `fhe_collector`.
+
+```
+export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
+```
+
 **Start app**
 
 ```
 export FLASK_APP=fhe.py
+export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
+export YOURAPPLICATION_MODE='DEVELOPMENT'
 flask run
 ```
 
@@ -103,14 +111,18 @@ flask db upgrade
 
 ### Testing
 
-Execute the test-scripts.
+Set application mode and unset maybe existing database URI's.
 
 ```
 export FLASK_APP=fhe.py
 export YOURAPPLICATION_MODE='TESTING'
-export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
 
+If you set the database URI as an environment and you don't want to use it anymore, simply unset it.
+
+```
+unset SQLALCHEMY_DATABASE_URI
+```
 **pytest**
 
 ```
