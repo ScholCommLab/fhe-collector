@@ -121,6 +121,12 @@ flask run
 
 ### Flask Commands
 
+Execute the commands as followed:
+
+```
+flask COMMAND OPTIONAL
+```
+
 **flask import_dois_from_csv**
 
 Imports the DOI's from a csv file into the database.

@@ -9,7 +9,7 @@ python:
 services: postgresql
 
 before_install:
-  - export YOURAPPLICATION_MODE=TESTING
+  - export ENV=testing
 
 install:
   - "pip install -r requirements.txt"
