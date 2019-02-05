@@ -8,7 +8,7 @@ Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar]
 
 **Features**
 
-* Tests wirtten in [pytest-flask](http://pytest-flask.readthedocs.io/) and executed with [Travis CI](https://travis-ci.org/ScholCommLab/fhe-collector). Test coverage by [pytest-cov](https://pypi.org/project/pytest-cov/) and [python-coveralls](https://github.com/z4r/python-coveralls), viewable on [coveralls.io](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master).
+* Tests written in [pytest-flask](http://pytest-flask.readthedocs.io/) and executed with [Travis CI](https://travis-ci.org/ScholCommLab/fhe-collector). Test coverage by [pytest-cov](https://pypi.org/project/pytest-cov/) and [python-coveralls](https://github.com/z4r/python-coveralls), viewable on [coveralls.io](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master).
 * auto-generated documentation through functions and class documentation with [sphinx](http://www.sphinx-doc.org/).
 
 **Copyright**
@@ -62,7 +62,8 @@ sudo -u $USERNAME_ADMIN createdb -O $USERNAME_OWNER fhe_collector
 
 *Pass PostgreSQL database URI*
 
-If you want to use a custom SQL-Alchemy database connection, you can pass the proper string via an environment variable.
+If you want to use a custom SQL-Alchemy database connection, you can pass the proper string via an environment variable. For more information about this, look at [SLQAlchemy](https://www.sqlalchemy.org/).
+
 ```
 export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
@@ -77,11 +78,32 @@ flask db init
 
 Rename the [settings_user_sample.py](settings_user_sample.py) file to `settings_user.py` and add the missing user settings in it.
 
-Then set the `YOURAPPLICATION_MODE` variable inside your shell, so the right settings file is loaded when the app starts. There are three application modes:
+## Development
 
-* 'DEVELOPMENT': is the default one. Does not need to be set, unless it does not work as expected.
-* 'TESTING': to execute the tests.
-* 'PRODUCTION': to run in production mode.
+### Running
+
+Before you can start here, you have to to all steps in the Setup section.
+
+**Tell starting point of application**
+
+```
+export FLASK_APP=fhe.py
+```
+
+**Configure the environment**
+
+Set the `ENV` variable and `DEBUG` to `true` if you are developing.
+
+* `development`: is the default one. Does not need to be set, unless it does not work as expected.
+* `testing`: to execute the tests.
+* `production`: to run in production mode.
+
+```
+export ENV=development
+export DEBUG=true
+```
+
+**Configure database**
 
 Set your database. The following example show how to connect to your postgreSQL database `fhe_collector`.
 
@@ -89,20 +111,45 @@ Set your database. The following example show how to connect to your postgreSQL 
 export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
 
-**Start app**
+**Run**
+
+Run the app as usual:
 
 ```
-export FLASK_APP=fhe.py
-export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
-export YOURAPPLICATION_MODE='DEVELOPMENT'
 flask run
 ```
 
-## Development
+### Flask Commands
+
+**flask import_dois_from_csv**
+
+Imports the DOI's from a csv file into the database.
+
+For development purposes there is a file with 100 DOI's in you can use. With `--filename` you can pass the filename to the function. See more in the function Docstring.
+
+```
+flask import_dois_from_csv --filename 'app/static/data/PKP_20171220_100.csv'
+```
+
+**flask create_urls**
+
+Creates URL's from all existing DOI database entries.
+
+**flask delete_all_dois**
+
+Deletes all DOI database entries.
+
+**flask delete_all_urls**
+
+Deletes all URL database entries.
+
+**flask fb_request**
+
+Makes Facebook requests with all URL database entries.
 
 ### Database Migration
 
-Update your database after changes.
+Update your database after changes. To add information about your changes, exchange "COMMENT" with your commit message.
 
 ```
 flask db migrate -m "COMMENT"
@@ -115,10 +162,10 @@ Set application mode and unset maybe existing database URI's.
 
 ```
 export FLASK_APP=fhe.py
-export YOURAPPLICATION_MODE='TESTING'
+export ENV=testing
 ```
 
-If you set the database URI as an environment and you don't want to use it anymore, simply unset it.
+If you set the database URI as an environment variable and you don't want to use it anymore, simply unset it.
 
 ```
 unset SQLALCHEMY_DATABASE_URI
@@ -173,23 +220,6 @@ To run the app on production, rename the [settings_production_sample.py](setting
 
 ```
 export FLASK_APP=fhe.py
-export YOURAPPLICATION_MODE='PRODUCTION'
+export ENV=production
+flask run
 ```
-
-## GLOSSAR
-
-**Coverage.py**
-
-Coverage.py is a tool for measuring code coverage of Python programs. It monitors your program, noting which parts of the code have been executed, then analyzes the source to identify code that could have been executed but was not. Coverage measurement is typically used to gauge the effectiveness of tests. It can show which parts of your code are being exercised by tests, and which are not.
-
-**Coveralls.io**
-
-Coveralls is a web service to help you track your code coverage over time, and ensure that all your new code is fully covered.
-
-**Travis CI**
-
-Travis CI is a hosted, distributed continuous integration service used to build and test software projects hosted at GitHub.
-
-**Sphinx**
-
-Sphinx is a tool that makes it easy to create intelligent and beautiful documentation. It can create reports in pdf and html.

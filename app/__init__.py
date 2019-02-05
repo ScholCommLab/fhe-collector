@@ -28,29 +28,27 @@ def create_app():
     """Creates application and loads settings."""
     app = Flask(__name__)
 
-    YOURAPPLICATION_MODE = os.getenv('YOURAPPLICATION_MODE', default='DEVELOPMENT')
-    print('* Updating App Mode to: ' + YOURAPPLICATION_MODE)
+    ENVIRONMENT = os.getenv('ENV', default='development')
+    TESTING = os.getenv('TESTING', default=False)
+    print('* Updating App Mode to: ' + ENVIRONMENT)
     travis = os.getenv('TRAVIS', default=False)
     if not travis:
         print('* Loading User Settings.')
-        app.config.from_object('settings_user')
-    if YOURAPPLICATION_MODE == 'DEVELOPMENT':
+        app.config.from_pyfile(BASE_DIR+'/settings_user.py', silent=True)
+    if ENVIRONMENT == 'development':
         print('* Loading Development Settings.')
-        app.config['ENV'] = 'DEVELOPMENT'
         app.config.from_pyfile(BASE_DIR+'/settings_development.py', silent=True)
         app.config.from_object('settings_default.Development')
         if not travis:
             DebugToolbarExtension(app)
-    elif YOURAPPLICATION_MODE == 'PRODUCTION':
+    elif ENVIRONMENT == 'production':
         print('* Loading Production Settings.')
-        app.config['ENV'] = 'PRODUCTION'
         # order of settings loading: 1. settings file, 2. environment variable DATABASE_URL, 3. environment variable SQLALCHEMY_DATABASE_URI
         if not travis:
             app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
         app.config.from_object('settings_default.Production')
-    elif YOURAPPLICATION_MODE == 'TESTING':
+    elif TESTING:
         print('* Loading Test Settings.')
-        app.config['ENV'] = 'TESTING'
         app.config.from_object('settings_default.Testing')
     print('* Database: ' + app.config['SQLALCHEMY_DATABASE_URI'])
     db.init_app(app)
@@ -87,33 +85,33 @@ def create_app():
         import pandas as pd
         from app.models import Doi
 
-        default_csv_filename = 'app/static/data/PKP_20171220_100.csv'
+        try:
+            df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
+            df = df.drop_duplicates(subset='doi')
+        except:
+            print('Error: CSV file for import not working.')
 
-        if not filename:
-            filename = default_csv_filename
-
-        df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
-        df = df.drop_duplicates(subset='doi')
-        num_rows = len(df.index)
-        num_added = 0
-        num_already_in = 0
-        for index, row in df.iloc[:num_rows].iterrows():
-            doi = row['doi']
-            result = Doi.query.filter_by(doi=doi).first()
-            if result is None:
-                doi = Doi(
-                    doi=doi,
-                    source_type='file',
-                    source_file=filename,
-                    source_json=None
-                )
-                db.session.add(doi)
-                num_added += 1
-            else:
-                num_already_in += 1
-        db.session.commit()
-        print(num_added, 'doi\'s added to database.')
-        print(num_already_in, 'doi\'s already in database.')
+        if filename:
+            num_rows = len(df.index)
+            num_added = 0
+            num_already_in = 0
+            for index, row in df.iloc[:num_rows].iterrows():
+                doi = row['doi']
+                result = Doi.query.filter_by(doi=doi).first()
+                if result is None:
+                    doi = Doi(
+                        doi=doi,
+                        source_type='file',
+                        source_file=filename,
+                        source_json=None
+                    )
+                    db.session.add(doi)
+                    num_added += 1
+                else:
+                    num_already_in += 1
+            db.session.commit()
+            print(num_added, 'doi\'s added to database.')
+            print(num_already_in, 'doi\'s already in database.')
 
     @app.cli.command()
     def delete_all_dois():
@@ -129,8 +127,7 @@ def create_app():
         print(num_deleted, 'doi\'s deleted from database.')
 
     @app.cli.command()
-    @click.option('--filename', default=None)
-    def create_urls(filename):
+    def create_urls():
         """Create URL's from the identifier."""
         from app.models import Doi, Url
         result_doi = Doi.query.all()
@@ -181,32 +178,52 @@ def create_app():
         db.session.commit()
         print(num_deleted, 'url\'s deleted from database.')
 
+    @app.cli.command()
+    @click.option('--filename', default=None)
+    def fb_request(filename):
+        """Send facebook requests of URL's.
 
-    # @app.cli.command()
-    # def fb_request():
-    #     """Send facebook requests of URL's.
-    #
-    #     """
-    #
-        # import pickle
-        # from facebook import GraphAPI, GraphAPIError
-    #     config_file = ROOT_DIR + 'settings_user.ini'
-    #     Config = configparser.ConfigParser()
-    #     Config.read(config_file)
-    #
-    #     FACEBOOK_APP_ID = Config.get('facebook', 'app_id')
-    #     FACEBOOK_APP_SECRET = Config.get('facebook', 'app_secret')
-    #     FACEBOOK_USER_TOKEN = Config.get('facebook', 'user_token')
-    #     BATCHSIZE = Config.get('facebook', 'batch_size')
+        urls: filename of json file with array of urls.
+        """
+        # FB_APP_ID = app.config['FB_APP_ID']
+        FB_APP_SECRET = app.config['FB_APP_SECRET']
+        # BATCH_SIZE = app.config['BATCH_SIZE']
 
-        # batches = range(0, len(), BATCH_SIZE)
+        if not urls:
+            from app.models import Url
+            result = Url.query.all()
+        else:
+            try:
+                import json
+                with open(urls) as f:
+                    data = json.load(f)
+            except:
+                print("URL's file not working.")
 
-    # @app.cli.command()
-    # def save_facebook_request_response():
-    #     """Save the response from facebook graph requests into the database.
-    #
-    #     """
-    #
+        # batches = range(0, len(urls), BATCH_SIZE)
+
+        import facebook
+        import urllib
+
+        graph = facebook.GraphAPI(access_token=FB_APP_SECRET, version="2.12")
+
+        print(result[0].url)
+        for row in result:
+            try:
+                fb_response = graph.get_object(
+                id=urllib.parse.quote_plus(row.url),
+                    fields="engagement, og_object"
+                )
+                if 'og_object' in fb_response:
+                    og_object = fb_response['og_object']
+                    print('og_object', og_object)
+                if 'engagement' in fb_response:
+                    og_engagement = fb_response['engagement']
+                    print('og_engagement', og_engagement)
+            except Exception as e:
+                og_error = e
+                print('og_error:', og_error)
+
 
     return app
 
