@@ -47,8 +47,9 @@ def create_app():
         if not travis:
             app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
         app.config.from_object('settings_default.Production')
-    elif TESTING:
+    elif ENVIRONMENT == 'testing':
         print('* Loading Test Settings.')
+        app.config['TESTING'] = True
         app.config.from_object('settings_default.Testing')
     if not travis:
         print('* Database: ' + app.config['SQLALCHEMY_DATABASE_URI'])
