@@ -11,7 +11,7 @@ class TestConfiguration:
         Tests if the app starts correctly.
         """
 
-        os.environ['YOURAPPLICATION_MODE'] = 'DEVELOPMENT'
+        os.environ['ENV'] = 'development'
 
         app = create_app()
         assert app.config['TESTING'] == False
@@ -25,7 +25,7 @@ class TestConfiguration:
         Tests if the app starts correctly.
         """
 
-        os.environ['YOURAPPLICATION_MODE'] = 'TESTING'
+        os.environ['ENV'] = 'testing'
         if 'SQLALCHEMY_DATABASE_URI' in os.environ:
             del os.environ['SQLALCHEMY_DATABASE_URI']
 
@@ -41,7 +41,7 @@ class TestConfiguration:
         """
         Tests if the app starts correctly.
         """
-        os.environ['YOURAPPLICATION_MODE'] = 'PRODUCTION'
+        os.environ['ENV'] = 'production'
         app = create_app()
 
         assert app.config['USER_SETTINGS_EXIST'] is True
