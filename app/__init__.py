@@ -50,7 +50,8 @@ def create_app():
     elif TESTING:
         print('* Loading Test Settings.')
         app.config.from_object('settings_default.Testing')
-    print('* Database: ' + app.config['SQLALCHEMY_DATABASE_URI'])
+    if not travis:
+        print('* Database: ' + app.config['SQLALCHEMY_DATABASE_URI'])
     db.init_app(app)
     migrate.init_app(app, db)
 
