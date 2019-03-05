@@ -29,7 +29,7 @@ This instructions are to setup the development environment, which is also the de
 
 Get the app on your computer, into your webservers directory (e. g. vhost).
 
-```
+```bash
 cd /PATH/TO/VHOST
 git clone https://github.com/ScholCommLab/fhe-collector.git
 cd fhe-collector
@@ -39,7 +39,7 @@ cd fhe-collector
 
 Start the virtual environment to install the needed python packages.
 
-```
+```bash
 virtualenv --python=/usr/bin/python3 venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -64,13 +64,13 @@ sudo -u $USERNAME_ADMIN createdb -O $USERNAME_OWNER fhe_collector
 
 If you want to use a custom SQL-Alchemy database connection, you can pass the proper string via an environment variable. For more information about this, look at [SLQAlchemy](https://www.sqlalchemy.org/).
 
-```
+```bash
 export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
 
 **Initialize database**
 
-```
+```bash
 flask db init
 ```
 
@@ -86,7 +86,7 @@ Before you can start here, you have to to all steps in the Setup section.
 
 **Tell starting point of application**
 
-```
+```bash
 export FLASK_APP=fhe.py
 ```
 
@@ -98,7 +98,7 @@ Set the `ENV` variable and `DEBUG` to `true` if you are developing.
 * `testing`: to execute the tests.
 * `production`: to run in production mode.
 
-```
+```bash
 export ENV=development
 export DEBUG=true
 ```
@@ -107,7 +107,7 @@ export DEBUG=true
 
 Set your database. The following example show how to connect to your postgreSQL database `fhe_collector`.
 
-```
+```bash
 export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
 
@@ -115,7 +115,7 @@ export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 
 Run the app as usual:
 
-```
+```bash
 flask run
 ```
 
@@ -123,35 +123,17 @@ flask run
 
 Execute the commands as followed:
 
-```
+```bash
 flask COMMAND OPTIONAL
 ```
 
-**flask import_dois_from_csv**
+For more details on each command, look inside the code documentation.
 
-Imports the DOI's from a csv file into the database.
-
-For development purposes there is a file with 100 DOI's in you can use. With `--filename` you can pass the filename to the function. See more in the function Docstring.
-
-```
-flask import_dois_from_csv --filename 'app/static/data/PKP_20171220_100.csv'
-```
-
-**flask create_urls**
-
-Creates URL's from all existing DOI database entries.
-
-**flask delete_all_dois**
-
-Deletes all DOI database entries.
-
-**flask delete_all_urls**
-
-Deletes all URL database entries.
-
-**flask fb_request**
-
-Makes Facebook requests with all URL database entries.
+* `import_dois_from_csv`
+* `create_doi_urls`
+* `delete_all_dois`
+* `delete_all_urls`
+* `fb_request`
 
 ### Database Migration
 

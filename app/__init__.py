@@ -78,63 +78,91 @@ def create_app():
 
     @app.cli.command()
     @click.option('--filename', default=None)
-    def import_dois_from_csv(filename):
-        """Import CSV file with DOI's.
+    def import_from_csv(filename):
+        """Import csv file with doi's and OJS url's.
+
+        Imports the DOI's and OJS url's from a csv file into the database.
+        For development purposes there is a file with 100 entries you can use.
+        With `--filename` you can pass the filename to the function.
 
         Args:
             filename: filename with path.
         """
         import pandas as pd
         from app.models import Doi
+        from app.models import Import
+        from app.models import Url
 
         try:
             df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
             df = df.drop_duplicates(subset='doi')
+            imp = Import('<file '+filename+'>', df.to_string())
+            db.session.add(imp)
+            db.session.commit()
         except:
             print('Error: CSV file for import not working.')
 
         if filename:
             num_rows = len(df.index)
-            num_added = 0
-            num_already_in = 0
+            dois_added = 0
+            dois_already_in = 0
+            urls_added = 0
+            urls_already_in = 0
+            # Loop over each entry (row)
             for index, row in df.iloc[:num_rows].iterrows():
                 doi = row['doi']
-                result = Doi.query.filter_by(doi=doi).first()
-                if result is None:
+                url = row['url']
+                # store doi
+                result_doi = Doi.query.filter_by(doi=doi).first()
+                if result_doi is None:
                     doi = Doi(
                         doi=doi,
-                        source_type='file',
-                        source_file=filename,
-                        source_json=None
+                        import_id=imp.id
                     )
                     db.session.add(doi)
-                    num_added += 1
+                    dois_added += 1
                 else:
-                    num_already_in += 1
+                    dois_already_in += 1
+                # store url
+                result_url = Url.query.filter_by(url=url).first()
+                if result_url is None:
+                    url = Url(
+                        url=url,
+                        doi=str(doi.doi),
+                        url_type='ojs'
+                    )
+                    db.session.add(url)
+                    urls_added += 1
+                else:
+                    urls_already_in += 1
             db.session.commit()
-            print(num_added, 'doi\'s added to database.')
-            print(num_already_in, 'doi\'s already in database.')
+            print(dois_added, 'doi\'s added to database.')
+            print(dois_already_in, 'doi\'s already in database.')
+            print(urls_added, 'url\'s added to database.')
+            print(urls_already_in, 'url\'s already in database.')
 
     @app.cli.command()
     def delete_all_dois():
         """Delete all doi entries."""
         from app.models import Doi
         result = Doi.query.all()
-        num_deleted = 0
+        dois_deleted = 0
         for row in result:
             db.session.delete(row)
-            num_deleted += 1
+            dois_deleted += 1
 
         db.session.commit()
-        print(num_deleted, 'doi\'s deleted from database.')
+        print(dois_deleted, 'doi\'s deleted from database.')
 
     @app.cli.command()
-    def create_urls():
+    def create_doi_urls():
         """Create URL's from the identifier."""
-        from app.models import Doi, Url
+        from app.models import Doi
+        from app.models import Url
+
+        urls_added = 0
+        urls_already_in = 0
         result_doi = Doi.query.all()
-        num_added = 0
-        num_already_in = 0
 
         for row in result_doi:
             url = 'https://doi.org/' + str(row.doi)
@@ -143,42 +171,40 @@ def create_app():
                 url = Url(
                     url=url,
                     doi=row.doi,
-                    url_type='dx.doi.org',
-                    url_source='created-from-doi'
+                    url_type='doi_old'
                 )
                 db.session.add(url)
-                num_added += 1
+                urls_added += 1
             else:
-                num_already_in += 1
+                urls_already_in += 1
             url = 'http://dx.doi.org/' + str(row.doi)
             result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
                 url = Url(
                     url=url,
                     doi=row.doi,
-                    url_type='doi.org',
-                    url_source='created-from-doi'
+                    url_type='doi_new'
                 )
                 db.session.add(url)
-                num_added += 1
+                urls_added += 1
             else:
-                num_already_in += 1
+                urls_already_in += 1
         db.session.commit()
-        print(num_added, 'url\'s added to database.')
-        print(num_already_in, 'url\'s already in database.')
+        print(urls_added, 'url\'s added to database.')
+        print(urls_already_in, 'url\'s already in database.')
 
     @app.cli.command()
     def delete_all_urls():
         """Delete all url entries."""
         from app.models import Url
         result = Url.query.all()
-        num_deleted = 0
+        urls_deleted = 0
         for row in result:
             db.session.delete(row)
-            num_deleted += 1
+            urls_deleted += 1
 
         db.session.commit()
-        print(num_deleted, 'url\'s deleted from database.')
+        print(urls_deleted, 'url\'s deleted from database.')
 
     @app.cli.command()
     @click.option('--filename', default=None)
@@ -207,7 +233,7 @@ def create_app():
         import facebook
         import urllib
 
-        graph = facebook.GraphAPI(access_token=FB_APP_SECRET, version="2.12")
+        graph = facebook.GraphAPI(access_token=FB_APP_SECRET, version='2.12')
 
         print(result[0].url)
         for row in result:
