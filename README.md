@@ -121,23 +121,23 @@ flask run
 
 ### Flask Commands
 
-Execute the commands as followed:
+To execute flask commands in the shell, the following pattern is used:
 
 ```bash
-flask COMMAND OPTIONAL
+flask COMMAND <OPTIONAL>
 ```
 
-For more details on each command, look inside the code documentation.
-
-* `import_dois_from_csv`
+Commands offered:
+* `import_from_csv`
 * `create_doi_urls`
 * `delete_all_dois`
 * `delete_all_urls`
-* `fb_request`
+
+For more details on each command, look inside the code documentation.
 
 ### Database Migration
 
-Update your database after changes. To add information about your changes, exchange "COMMENT" with your commit message.
+After changing your SQLAlchemy models, you have to update your database. To add information about your changes, exchange "COMMENT" with your commit message.
 
 ```
 flask db migrate -m "COMMENT"
@@ -146,7 +146,7 @@ flask db upgrade
 
 ### Testing
 
-Set application mode and unset maybe existing database URI's.
+To execute the tests, set the application mode and unset database URI.
 
 ```
 export FLASK_APP=fhe.py
@@ -160,13 +160,14 @@ unset SQLALCHEMY_DATABASE_URI
 ```
 **pytest**
 
+To execute the tests with pytest (as recommended), simply type:
 ```
 pytest
 ```
 
 **Coverage**
 
-Get test coverage of codebase.
+To get test coverage of codebase, use coverage.
 
 ```
 coverage run fhe.py
@@ -181,19 +182,19 @@ pytest --cov-report html --cov=app tests/
 ```
 **Coveralls**
 
-Local development
+To use Coveralls on local development:
 ```
 pytest tests/ --doctest-modules -v --cov=app
 ```
 
-Travis
+And to use Coveralls on Travis-CI
 ```
 pytest tests/ --doctest-modules -v --cov coveralls --cov-report term-missing
 ```
 
 ### Documentation
 
-Use Sphinx to create class and function documentation out of the codebase.
+Use Sphinx to create class and function documentation out of the doc-strings.
 
 ```
 cd docs/
