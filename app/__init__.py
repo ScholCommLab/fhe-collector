@@ -91,6 +91,7 @@ def create_app():
         from app.models import Doi
         from app.models import Import
         from app.models import Url
+        import re
 
         try:
             df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
@@ -110,30 +111,43 @@ def create_app():
             # Loop over each entry (row)
             for index, row in df.iloc[:num_rows].iterrows():
                 doi = row['doi']
-                url = row['url']
-                # store doi
-                result_doi = Doi.query.filter_by(doi=doi).first()
-                if result_doi is None:
-                    doi = Doi(
-                        doi=doi,
-                        import_id=imp.id
-                    )
-                    db.session.add(doi)
-                    dois_added += 1
-                else:
-                    dois_already_in += 1
-                # store url
-                result_url = Url.query.filter_by(url=url).first()
-                if result_url is None:
-                    url = Url(
-                        url=url,
-                        doi=str(doi.doi),
-                        url_type='ojs'
-                    )
-                    db.session.add(url)
-                    urls_added += 1
-                else:
-                    urls_already_in += 1
+                # validate doi
+                patterns = [
+                    r"^10.\d{4,9}/[-._;()/:A-Z0-9]+$",
+                    r"^10.1002/[^\s]+$",
+                    r"^10.\d{4}/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d$",
+                    r"^10.1021/\w\w\d+$",
+                    r"^10.1207\/[\w\d]+\&\d+_\d+$"
+                ]
+                is_valid = False
+                for pat in patterns:
+                    if re.match(pat, doi, re.IGNORECASE):
+                        is_valid = True
+                if is_valid:
+                    url = row['url']
+                    # store doi
+                    result_doi = Doi.query.filter_by(doi=doi).first()
+                    if result_doi is None:
+                        doi = Doi(
+                            doi=doi,
+                            import_id=imp.id
+                        )
+                        db.session.add(doi)
+                        dois_added += 1
+                    else:
+                        dois_already_in += 1
+                    # store url
+                    result_url = Url.query.filter_by(url=url).first()
+                    if result_url is None:
+                        url = Url(
+                            url=url,
+                            doi=str(doi.doi),
+                            url_type='ojs'
+                        )
+                        db.session.add(url)
+                        urls_added += 1
+                    else:
+                        urls_already_in += 1
             db.session.commit()
             print(dois_added, 'doi\'s added to database.')
             print(dois_already_in, 'doi\'s already in database.')
