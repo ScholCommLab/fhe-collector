@@ -173,7 +173,7 @@ def create_app():
         from app.models import Doi
         from app.models import Url
         import requests
-        import time
+        import urllib.parse
 
         urls_new_added = 0
         urls_new_already_in = 0
@@ -213,9 +213,9 @@ def create_app():
                 urls_old_already_in += 1
             # create landing page url
             url = 'https://doi.org/{0}'.format(doi_url_encoded)
-            resp = requests.get(url)
+            resp = requests.get(url, allow_redirects=True)
             url_landing_page = resp.url
-            result_url = Url.query.filter_by(url=url).first()
+            result_url = Url.query.filter_by(url=url_landing_page).first()
             if result_url is None:
                 url = Url(
                     url=url_landing_page,
@@ -239,29 +239,28 @@ def create_app():
     @app.cli.command()
     def create_ncbi_urls():
         """Create NCBI URL's from the identifier."""
-        # TODO: https://bitbucket.org/metapub/metapub/src/6fe5735490a90bd6d832c8e4688b26edeee895dc/metapub/?at=default
         from app.models import Doi
         from app.models import Url
         import urllib.parse
         import requests
-        import time
 
         urls_pm_added = 0
         urls_pm_already_in = 0
         urls_pmc_added = 0
         urls_pmc_already_in = 0
+
         result_doi = Doi.query.all()
 
         for row in result_doi:
             # send request to NCBI API
-            doi_url_encoded = urllib.parse.quote(row.doi)
-            # TODO: allows up to 200 ids send at the same time
             # https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
-            url = ' https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}&format=json'.format(doi_url_encoded)
-            resp = requests.get(url, params={'tool': 'FHE-collector', 'email': 'mail@stefankasberger.at'})
-            # print(resp.json())
+            # TODO: allows up to 200 ids sent at the same time
+            doi_url_encoded = urllib.parse.quote(row.doi)
+            url = ' https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
+            resp = requests.get(url, params={
+                'tool': NCBI_TOOL, 'email': NCBI_EMAIL,
+                'idtype': 'doi', 'versions': 'no', 'format': 'json'})
             resp = resp.json()
-            # TODO: fix email
             if 'records' in resp:
                 # create PMC url
                 if 'pmcid' in resp['records']:
@@ -292,7 +291,6 @@ def create_app():
                         urls_pm_added += 1
                     else:
                         urls_pm_already_in += 1
-
 
         print(urls_pm_added, 'PM url\'s added to database.')
         print(urls_pm_already_in, 'PM url\'s already in database.')
