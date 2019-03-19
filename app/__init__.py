@@ -7,7 +7,6 @@
 """
 
 
-import configparser
 import os
 import logging
 from logging.handlers import RotatingFileHandler
@@ -25,7 +24,7 @@ migrate = Migrate()
 
 
 def create_app():
-    """Creates application and loads settings."""
+    """Create application and loads settings."""
     app = Flask(__name__)
 
     ENVIRONMENT = os.getenv('ENV', default='development')
@@ -159,12 +158,19 @@ def create_app():
         """Create URL's from the identifier."""
         from app.models import Doi
         from app.models import Url
+        import requests
+        import time
 
-        urls_added = 0
-        urls_already_in = 0
+        urls_new_added = 0
+        urls_new_already_in = 0
+        urls_old_added = 0
+        urls_old_already_in = 0
+        urls_landing_page_added = 0
+        urls_landing_page_already_in = 0
         result_doi = Doi.query.all()
 
         for row in result_doi:
+            # create http url
             url = 'https://doi.org/' + str(row.doi)
             result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
@@ -174,9 +180,10 @@ def create_app():
                     url_type='doi_old'
                 )
                 db.session.add(url)
-                urls_added += 1
+                urls_new_added += 1
             else:
-                urls_already_in += 1
+                urls_new_already_in += 1
+            # create http url
             url = 'http://dx.doi.org/' + str(row.doi)
             result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
@@ -186,12 +193,33 @@ def create_app():
                     url_type='doi_new'
                 )
                 db.session.add(url)
-                urls_added += 1
+                urls_old_added += 1
             else:
-                urls_already_in += 1
+                urls_old_already_in += 1
+            # create landing page url
+            url = 'https://doi.org/' + str(row.doi)
+            resp = requests.get(url)
+            url_landing_page = resp.url
+            result_url = Url.query.filter_by(url=url).first()
+            if result_url is None:
+                url = Url(
+                    url=url_landing_page,
+                    doi=row.doi,
+                    url_type='doi_landing_page'
+                )
+                db.session.add(url)
+                urls_landing_page_added += 1
+            else:
+                urls_landing_page_already_in += 1
         db.session.commit()
-        print(urls_added, 'url\'s added to database.')
-        print(urls_already_in, 'url\'s already in database.')
+        print(urls_new_added, 'doi new url\'s added to database.')
+        print(urls_new_already_in, 'doi new url\'s already in database.')
+        print(urls_old_added, 'doi old url\'s added to database.')
+        print(urls_old_already_in, 'doi old url\'s already in database.')
+        print(urls_landing_page_added,
+              'doi landing page url\'s added to database.')
+        print(urls_landing_page_already_in,
+              'doi landing page url\'s already in database.')
 
     @app.cli.command()
     def delete_all_urls():
