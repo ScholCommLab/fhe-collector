@@ -170,8 +170,9 @@ def create_app():
         result_doi = Doi.query.all()
 
         for row in result_doi:
+            doi_url_encoded = urllib.parse.quote(row.doi)
             # create http url
-            url = 'https://doi.org/' + str(row.doi)
+            url = 'https://doi.org/{0}'.format(doi_url_encoded)
             result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
                 url = Url(
@@ -184,7 +185,7 @@ def create_app():
             else:
                 urls_new_already_in += 1
             # create http url
-            url = 'http://dx.doi.org/' + str(row.doi)
+            url = 'http://dx.doi.org/{0}'.format(doi_url_encoded)
             result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
                 url = Url(
@@ -197,7 +198,7 @@ def create_app():
             else:
                 urls_old_already_in += 1
             # create landing page url
-            url = 'https://doi.org/' + str(row.doi)
+            url = 'https://doi.org/{0}'.format(doi_url_encoded)
             resp = requests.get(url)
             url_landing_page = resp.url
             result_url = Url.query.filter_by(url=url).first()
@@ -220,6 +221,69 @@ def create_app():
               'doi landing page url\'s added to database.')
         print(urls_landing_page_already_in,
               'doi landing page url\'s already in database.')
+
+    @app.cli.command()
+    def create_ncbi_urls():
+        """Create NCBI URL's from the identifier."""
+        # TODO: https://bitbucket.org/metapub/metapub/src/6fe5735490a90bd6d832c8e4688b26edeee895dc/metapub/?at=default
+        from app.models import Doi
+        from app.models import Url
+        import urllib.parse
+        import requests
+        import time
+
+        urls_pm_added = 0
+        urls_pm_already_in = 0
+        urls_pmc_added = 0
+        urls_pmc_already_in = 0
+        result_doi = Doi.query.all()
+
+        for row in result_doi:
+            # send request to NCBI API
+            doi_url_encoded = urllib.parse.quote(row.doi)
+            # TODO: allows up to 200 ids send at the same time
+            # https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
+            url = ' https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}&format=json'.format(doi_url_encoded)
+            resp = requests.get(url, params={'tool': 'FHE-collector', 'email': 'mail@stefankasberger.at'})
+            # print(resp.json())
+            resp = resp.json()
+            # TODO: fix email
+            if 'records' in resp:
+                # create PMC url
+                if 'pmcid' in resp['records']:
+                    url = 'https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/'.format(resp['records']['pmcid'])
+                    result_url = Url.query.filter_by(url=url).first()
+                    if result_url is None:
+                        url = Url(
+                            url=url,
+                            doi=row.doi,
+                            url_type='pmc'
+                        )
+                        db.session.add(url)
+                        urls_pmc_added += 1
+                    else:
+                        urls_pmc_already_in += 1
+
+                # create PM url
+                if 'pmid' in resp['records']:
+                    url = 'https://www.ncbi.nlm.nih.gov/pubmed/{0}'.format(resp['records']['pmid'])
+                    result_url = Url.query.filter_by(url=url).first()
+                    if result_url is None:
+                        url = Url(
+                            url=url,
+                            doi=row.doi,
+                            url_type='pm'
+                        )
+                        db.session.add(url)
+                        urls_pm_added += 1
+                    else:
+                        urls_pm_already_in += 1
+
+
+        print(urls_pm_added, 'PM url\'s added to database.')
+        print(urls_pm_already_in, 'PM url\'s already in database.')
+        print(urls_pmc_added, 'PMC url\'s added to database.')
+        print(urls_pmc_already_in, 'PMC url\'s already in database.')
 
     @app.cli.command()
     def delete_all_urls():
