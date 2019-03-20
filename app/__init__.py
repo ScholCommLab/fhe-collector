@@ -148,7 +148,7 @@ def create_app():
                         urls_added += 1
                     else:
                         urls_already_in += 1
-            db.session.commit()
+                db.session.commit()
             print(dois_added, 'doi\'s added to database.')
             print(dois_already_in, 'doi\'s already in database.')
             print(urls_added, 'url\'s added to database.')
@@ -181,25 +181,14 @@ def create_app():
         urls_old_already_in = 0
         urls_landing_page_added = 0
         urls_landing_page_already_in = 0
+
         result_doi = Doi.query.all()
 
         for row in result_doi:
             doi_url_encoded = urllib.parse.quote(row.doi)
-            # create http url
+            # always overwrite the url at the beginning of each section
+            # create new doi url
             url = 'https://doi.org/{0}'.format(doi_url_encoded)
-            result_url = Url.query.filter_by(url=url).first()
-            if result_url is None:
-                url = Url(
-                    url=url,
-                    doi=row.doi,
-                    url_type='doi_old'
-                )
-                db.session.add(url)
-                urls_new_added += 1
-            else:
-                urls_new_already_in += 1
-            # create http url
-            url = 'http://dx.doi.org/{0}'.format(doi_url_encoded)
             result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
                 url = Url(
@@ -208,17 +197,30 @@ def create_app():
                     url_type='doi_new'
                 )
                 db.session.add(url)
+                urls_new_added += 1
+            else:
+                urls_new_already_in += 1
+            # create old doi url
+            url = 'http://dx.doi.org/{0}'.format(doi_url_encoded)
+            result_url = Url.query.filter_by(url=url).first()
+            if result_url is None:
+                url = Url(
+                    url=url,
+                    doi=row.doi,
+                    url_type='doi_old'
+                )
+                db.session.add(url)
                 urls_old_added += 1
             else:
                 urls_old_already_in += 1
-            # create landing page url
+            # create doi landing page url
             url = 'https://doi.org/{0}'.format(doi_url_encoded)
             resp = requests.get(url, allow_redirects=True)
-            url_landing_page = resp.url
-            result_url = Url.query.filter_by(url=url_landing_page).first()
+            url = resp.url
+            result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
                 url = Url(
-                    url=url_landing_page,
+                    url=url,
                     doi=row.doi,
                     url_type='doi_landing_page'
                 )
@@ -226,7 +228,7 @@ def create_app():
                 urls_landing_page_added += 1
             else:
                 urls_landing_page_already_in += 1
-        db.session.commit()
+            db.session.commit()
         print(urls_new_added, 'doi new url\'s added to database.')
         print(urls_new_already_in, 'doi new url\'s already in database.')
         print(urls_old_added, 'doi old url\'s added to database.')
@@ -253,18 +255,20 @@ def create_app():
 
         for row in result_doi:
             # send request to NCBI API
-            # https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
             # TODO: allows up to 200 ids sent at the same time
+            # TODO: https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
             doi_url_encoded = urllib.parse.quote(row.doi)
             url = ' https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
             resp = requests.get(url, params={
-                'tool': NCBI_TOOL, 'email': NCBI_EMAIL,
+                'tool': app.config['NCBI_TOOL'],
+                'email': app.config['NCBI_EMAIL'],
                 'idtype': 'doi', 'versions': 'no', 'format': 'json'})
             resp = resp.json()
             if 'records' in resp:
                 # create PMC url
                 if 'pmcid' in resp['records']:
-                    url = 'https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/'.format(resp['records']['pmcid'])
+                    url = 'https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/'.format(
+                        resp['records']['pmcid'])
                     result_url = Url.query.filter_by(url=url).first()
                     if result_url is None:
                         url = Url(
@@ -276,10 +280,10 @@ def create_app():
                         urls_pmc_added += 1
                     else:
                         urls_pmc_already_in += 1
-
                 # create PM url
                 if 'pmid' in resp['records']:
-                    url = 'https://www.ncbi.nlm.nih.gov/pubmed/{0}'.format(resp['records']['pmid'])
+                    url = 'https://www.ncbi.nlm.nih.gov/pubmed/{0}'.format(
+                        resp['records']['pmid'])
                     result_url = Url.query.filter_by(url=url).first()
                     if result_url is None:
                         url = Url(
@@ -291,11 +295,62 @@ def create_app():
                         urls_pm_added += 1
                     else:
                         urls_pm_already_in += 1
+            db.session.commit()
 
         print(urls_pm_added, 'PM url\'s added to database.')
         print(urls_pm_already_in, 'PM url\'s already in database.')
         print(urls_pmc_added, 'PMC url\'s added to database.')
         print(urls_pmc_already_in, 'PMC url\'s already in database.')
+
+    @app.cli.command()
+    def create_crossref_urls():
+        """Create crossref URL's from the identifier."""
+        # TODO: https://github.com/CrossRef/rest-api-doc
+        # https://www.crossref.org/blog/urls-and-dois-a-complicated-relationship/
+        from app.models import Doi
+        from app.models import Url
+        import urllib.parse
+        import requests
+        import time
+
+        urls_added = 0
+        urls_already_in = 0
+        result_doi = Doi.query.all()
+        url = 'https://api.crossref.org/works'
+        resp = requests.get(url)
+        rate_limit_limit = resp.headers['X-Rate-Limit-Limit']
+        rate_limit_intervall = resp.headers['X-Rate-Limit-Interval']
+        waiting_time = int(rate_limit_intervall.split('s')[0]) / (
+            int(rate_limit_limit))
+
+        for row in result_doi:
+            doi_url_encoded = urllib.parse.quote(row.doi)
+            url = 'https://api.crossref.org/works/{0}/agency'.format(
+                doi_url_encoded)
+            result_url = Url.query.filter_by(url=url).first()
+            if result_url is None:
+                time.sleep(waiting_time)
+                resp = requests.get(url, params={
+                    'mailto': app.config['NCBI_EMAIL']})
+                resp = resp.json()
+                # print('\n')
+                # print(row.doi)
+                # print(url)
+                # print(resp.text)
+                if 'resource_url' in resp:
+                    url = Url(
+                        url=url,
+                        doi=row.doi,
+                        url_type='crossref'
+                    )
+                    db.session.add(url)
+                    urls_added += 1
+            else:
+                urls_already_in += 1
+            db.session.commit()
+            
+        print(urls_added, 'crossref url\'s added to database.')
+        print(urls_already_in, 'crossref url\'s already in database.')
 
     @app.cli.command()
     def delete_all_urls():
