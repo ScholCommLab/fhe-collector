@@ -1,12 +1,16 @@
 from app import db
 from datetime import datetime
+import json
 
 
 class Import(db.Model):
-    """Imports of basic data done."""
+    """Imports of basic data done.
+
+    source: '<file FILENAME>', '<uri URI>', 'api'
+    """
     id = db.Column(db.Integer, primary_key=True)
     imported_at = db.Column(db.DateTime(), nullable=False)
-    source = db.Column(db.String(512), nullable=False)  # '<file FILENAME>', '<uri URI>', 'api'
+    source = db.Column(db.String(512), nullable=False)
     raw = db.Column(db.Text())
 
     def __init__(self, source, raw):
@@ -42,10 +46,14 @@ class Doi(db.Model):
 
 
 class Url(db.Model):
-    """Url model."""
+    """Url model.
+
+    url_type:   'ojs', 'doi_new', 'doi_old', 'doi_new_landingpage',
+                'unpaywall', 'pubmed', 'pubmedcentral'
+    """
     url = db.Column(db.String(512), primary_key=True)
     doi = db.Column(db.String(64), db.ForeignKey('doi.doi'), nullable=False)
-    url_type = db.Column(db.String(32), nullable=False)  # 'ojs', 'doi_new', 'doi_old', 'crossref', 'unpaywall', 'pubmed', 'pubmedcentral'
+    url_type = db.Column(db.String(32), nullable=False)
     date_added = db.Column(db.DateTime(), nullable=False)
 
     def __init__(self, url, doi, url_type):
@@ -58,14 +66,26 @@ class Url(db.Model):
         return '<URL {}>'.format(self.url)
 
 
-# class FBRequest(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     url_url = db.Column(db.String(256), db.ForeignKey('url.url'), nullable=False)
-#     request = db.Column(db.Text())
-#     response = db.Column(db.Text())
-#     engagement = db.Column(db.Text())
-#     timestamp = db.Column(db.DateTime())
-#     error = db.Column(db.Boolean())
-#
-#     def __repr__(self):
-#         return '<Facebook Request {}>'.format(self.id)
+class FBRequest(db.Model):
+    """FBRequest model."""
+    id = db.Column(db.Integer, primary_key=True)
+    url_url = db.Column(db.String(512), db.ForeignKey('url.url'),
+                        nullable=False)
+    response = db.Column(db.Text())
+    reactions = db.Column(db.Integer)
+    shares = db.Column(db.Integer)
+    comments = db.Column(db.Integer)
+    plugin_comments = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime())
+
+    def __init__(self, url, response):
+        self.url_url = url
+        self.response = json.dumps(response)
+        self.reactions = response['engagement']['reaction_count'],
+        self.shares = response['engagement']['share_count'],
+        self.comments = response['engagement']['comment_count'],
+        self.plugin_comments = response['engagement']['comment_plugin_count']
+        self.timestamp = datetime.now()
+
+    def __repr__(self):
+        return '<Facebook Request {}>'.format(self.request)

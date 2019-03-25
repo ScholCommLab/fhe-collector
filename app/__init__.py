@@ -179,8 +179,8 @@ def create_app():
         urls_new_already_in = 0
         urls_old_added = 0
         urls_old_already_in = 0
-        urls_landing_page_added = 0
-        urls_landing_page_already_in = 0
+        urls_landingpage_added = 0
+        urls_landingpage_already_in = 0
 
         result_doi = Doi.query.all()
 
@@ -222,25 +222,28 @@ def create_app():
                 url = Url(
                     url=url,
                     doi=row.doi,
-                    url_type='doi_landing_page'
+                    url_type='doi_landingpage'
                 )
                 db.session.add(url)
-                urls_landing_page_added += 1
+                urls_landingpage_added += 1
             else:
-                urls_landing_page_already_in += 1
+                urls_landingpage_already_in += 1
             db.session.commit()
         print(urls_new_added, 'doi new url\'s added to database.')
         print(urls_new_already_in, 'doi new url\'s already in database.')
         print(urls_old_added, 'doi old url\'s added to database.')
         print(urls_old_already_in, 'doi old url\'s already in database.')
-        print(urls_landing_page_added,
-              'doi landing page url\'s added to database.')
-        print(urls_landing_page_already_in,
-              'doi landing page url\'s already in database.')
+        print(urls_landingpage_added,
+              'doi new landing page url\'s added to database.')
+        print(urls_landingpage_already_in,
+              'doi new landing page url\'s already in database.')
 
     @app.cli.command()
     def create_ncbi_urls():
-        """Create NCBI URL's from the identifier."""
+        """Create NCBI URL's from the identifier.
+
+        https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
+        """
         from app.models import Doi
         from app.models import Url
         import urllib.parse
@@ -256,7 +259,6 @@ def create_app():
         for row in result_doi:
             # send request to NCBI API
             # TODO: allows up to 200 ids sent at the same time
-            # TODO: https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
             doi_url_encoded = urllib.parse.quote(row.doi)
             url = ' https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
             resp = requests.get(url, params={
@@ -303,54 +305,58 @@ def create_app():
         print(urls_pmc_already_in, 'PMC url\'s already in database.')
 
     @app.cli.command()
-    def create_crossref_urls():
-        """Create crossref URL's from the identifier."""
-        # TODO: https://github.com/CrossRef/rest-api-doc
-        # https://www.crossref.org/blog/urls-and-dois-a-complicated-relationship/
+    def create_unpaywall_urls():
+        """Create Unpaywall URL's from the identifier.
+
+        https://unpaywall.org/products/api
+        """
         from app.models import Doi
         from app.models import Url
         import urllib.parse
         import requests
-        import time
 
-        urls_added = 0
-        urls_already_in = 0
+        NCBI_EMAIL = app.config['NCBI_EMAIL']
+        urls_unpaywall_added = 0
+        urls_unpaywall_already_in = 0
+
         result_doi = Doi.query.all()
-        url = 'https://api.crossref.org/works'
-        resp = requests.get(url)
-        rate_limit_limit = resp.headers['X-Rate-Limit-Limit']
-        rate_limit_intervall = resp.headers['X-Rate-Limit-Interval']
-        waiting_time = int(rate_limit_intervall.split('s')[0]) / (
-            int(rate_limit_limit))
 
         for row in result_doi:
+            # send request to Unpaywall API
+            url_dict = {}
             doi_url_encoded = urllib.parse.quote(row.doi)
-            url = 'https://api.crossref.org/works/{0}/agency'.format(
-                doi_url_encoded)
-            result_url = Url.query.filter_by(url=url).first()
-            if result_url is None:
-                time.sleep(waiting_time)
-                resp = requests.get(url, params={
-                    'mailto': app.config['NCBI_EMAIL']})
-                resp = resp.json()
-                # print('\n')
-                # print(row.doi)
-                # print(url)
-                # print(resp.text)
-                if 'resource_url' in resp:
+            url = '	https://api.unpaywall.org/v2/{0}?email={1}'.format(doi_url_encoded, NCBI_EMAIL)
+            resp = requests.get(url)
+            resp = resp.json()
+            # check if response includes needed data
+            if 'doi_url' in resp:
+                url_dict['unpaywall_doi_url'] = resp['doi_url']
+            if 'oa_locations' in resp:
+                for loc in resp['oa_locations']:
+                    if 'url_for_pdf' in loc:
+                        url_dict['unpaywall_url_for_pdf'] = loc['url_for_pdf']
+                    if 'url' in loc:
+                        url_dict['unpaywall_url'] = loc['url']
+                    if 'url_for_landing_page' in loc:
+                        url_dict['unpaywall_url_for_landing_page'] = loc['url_for_landing_page']
+
+            # store URL's in database
+            for url_type, url in url_dict.items():
+                result_url = Url.query.filter_by(url=url).first()
+                if result_url is None:
                     url = Url(
                         url=url,
                         doi=row.doi,
-                        url_type='crossref'
+                        url_type=url_type
                     )
                     db.session.add(url)
-                    urls_added += 1
-            else:
-                urls_already_in += 1
+                    urls_unpaywall_added += 1
+                else:
+                    urls_unpaywall_already_in += 1
             db.session.commit()
-            
-        print(urls_added, 'crossref url\'s added to database.')
-        print(urls_already_in, 'crossref url\'s already in database.')
+
+        print(urls_unpaywall_added, 'Unpaywall url\'s added to database.')
+        print(urls_unpaywall_already_in, 'Unpaywall url\'s already in database.')
 
     @app.cli.command()
     def delete_all_urls():
@@ -366,51 +372,58 @@ def create_app():
         print(urls_deleted, 'url\'s deleted from database.')
 
     @app.cli.command()
-    @click.option('--filename', default=None)
-    def fb_request(filename):
-        """Send facebook requests of URL's.
+    def fb_requests():
+        """Get app access token.
 
-        urls: filename of json file with array of urls.
+        {'id': 'http://dx.doi.org/10.22230/src.2010v1n2a24',
+        'engagement': { 'share_count': 0, 'comment_plugin_count': 0,
+                        'reaction_count': 0, 'comment_count': 0}}
         """
-        # FB_APP_ID = app.config['FB_APP_ID']
+        # TODO: für was extended_user_access function? https://github.com/ScholCommLab/fhe-plos/blob/master/code/2_collect_private.py
+        from app.models import Url
+        from app.models import FBRequest
+        from datetime import datetime
+        from facebook import GraphAPI
+        import json
+        import requests
+
+        FB_APP_ID = app.config['FB_APP_ID']
         FB_APP_SECRET = app.config['FB_APP_SECRET']
-        # BATCH_SIZE = app.config['BATCH_SIZE']
 
-        if not urls:
-            from app.models import Url
-            result = Url.query.all()
-        else:
+        payload = {'grant_type': 'client_credentials',
+                   'client_id': FB_APP_ID,
+                   'client_secret': FB_APP_SECRET}
+        try:
+            response = requests.post(
+                'https://graph.facebook.com/oauth/access_token?',
+                params=payload)
+        except requests.exceptions.RequestException:
+            raise Exception()
+
+        token = json.loads(response.text)
+        fb_graph = GraphAPI(token['access_token'], version="2.10")
+
+        fb_request_added = 0
+        result_url = Url.query.all()
+        for row in result_url:
             try:
-                import json
-                with open(urls) as f:
-                    data = json.load(f)
-            except:
-                print("URL's file not working.")
-
-        # batches = range(0, len(urls), BATCH_SIZE)
-
-        import facebook
-        import urllib
-
-        graph = facebook.GraphAPI(access_token=FB_APP_SECRET, version='2.12')
-
-        print(result[0].url)
-        for row in result:
-            try:
-                fb_response = graph.get_object(
-                id=urllib.parse.quote_plus(row.url),
-                    fields="engagement, og_object"
-                )
-                if 'og_object' in fb_response:
-                    og_object = fb_response['og_object']
-                    print('og_object', og_object)
-                if 'engagement' in fb_response:
-                    og_engagement = fb_response['engagement']
-                    print('og_engagement', og_engagement)
+                url = row.url
+                result = fb_graph.get_object(id=url, fields="engagement,og_object")
+                err_msg = None
             except Exception as e:
-                og_error = e
-                print('og_error:', og_error)
+                err_msg = str(e)
+                print(e)
+                result = None
 
+            if result:
+                fb_request = FBRequest(
+                    url=row.url,
+                    response=result
+                )
+                db.session.add(fb_request)
+                fb_request_added += 1
+        db.session.commit()
+        print(fb_request_added, 'Facebook openGraph Request\'s added to database.')
 
     return app
 

@@ -74,6 +74,12 @@ export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 flask db init
 ```
 
+**Upgrade database**
+
+```bash
+flask db upgrade
+```
+
 **User and database settings**
 
 Rename the [settings_user_sample.py](settings_user_sample.py) file to `settings_user.py` and add the missing user settings in it.
@@ -82,7 +88,7 @@ Rename the [settings_user_sample.py](settings_user_sample.py) file to `settings_
 
 ### Running
 
-Before you can start here, you have to to all steps in the Setup section.
+Before you can start here, you have to do all steps in the Setup section.
 
 **Tell starting point of application**
 
@@ -132,6 +138,7 @@ Commands offered:
 * `create_doi_urls`
 * `delete_all_dois`
 * `delete_all_urls`
+* `fb_requests`
 
 For more details on each command, look inside the code documentation.
 
