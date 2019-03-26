@@ -379,7 +379,7 @@ def create_app():
         'engagement': { 'share_count': 0, 'comment_plugin_count': 0,
                         'reaction_count': 0, 'comment_count': 0}}
         """
-        # TODO: für was extended_user_access function? https://github.com/ScholCommLab/fhe-plos/blob/master/code/2_collect_private.py
+        # TODO: for what extended_user_access function? https://github.com/ScholCommLab/fhe-plos/blob/master/code/2_collect_private.py
         from app.models import Url
         from app.models import FBRequest
         from datetime import datetime
