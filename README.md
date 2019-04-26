@@ -8,7 +8,7 @@ Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar]
 
 **Features**
 
-* Tests wirtten in [pytest-flask](http://pytest-flask.readthedocs.io/) and executed with [Travis CI](https://travis-ci.org/ScholCommLab/fhe-collector). Test coverage by [pytest-cov](https://pypi.org/project/pytest-cov/) and [python-coveralls](https://github.com/z4r/python-coveralls), viewable on [coveralls.io](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master).
+* Tests written in [pytest-flask](http://pytest-flask.readthedocs.io/) and executed with [Travis CI](https://travis-ci.org/ScholCommLab/fhe-collector). Test coverage by [pytest-cov](https://pypi.org/project/pytest-cov/) and [python-coveralls](https://github.com/z4r/python-coveralls), viewable on [coveralls.io](https://coveralls.io/github/ScholCommLab/fhe-collector?branch=master).
 * auto-generated documentation through functions and class documentation with [sphinx](http://www.sphinx-doc.org/).
 
 **Copyright**
@@ -29,7 +29,7 @@ This instructions are to setup the development environment, which is also the de
 
 Get the app on your computer, into your webservers directory (e. g. vhost).
 
-```
+```bash
 cd /PATH/TO/VHOST
 git clone https://github.com/ScholCommLab/fhe-collector.git
 cd fhe-collector
@@ -39,7 +39,7 @@ cd fhe-collector
 
 Start the virtual environment to install the needed python packages.
 
-```
+```bash
 virtualenv --python=/usr/bin/python3 venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -62,47 +62,89 @@ sudo -u $USERNAME_ADMIN createdb -O $USERNAME_OWNER fhe_collector
 
 *Pass PostgreSQL database URI*
 
-If you want to use a custom SQL-Alchemy database connection, you can pass the proper string via an environment variable.
-```
+If you want to use a custom SQL-Alchemy database connection, you can pass the proper string via an environment variable. For more information about this, look at [SLQAlchemy](https://www.sqlalchemy.org/).
+
+```bash
 export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
 
 **Initialize database**
 
-```
+```bash
 flask db init
+```
+
+**Upgrade database**
+
+```bash
+flask db upgrade
 ```
 
 **User and database settings**
 
 Rename the [settings_user_sample.py](settings_user_sample.py) file to `settings_user.py` and add the missing user settings in it.
 
-Then set the `YOURAPPLICATION_MODE` variable inside your shell, so the right settings file is loaded when the app starts. There are three application modes:
+## Development
 
-* 'DEVELOPMENT': is the default one. Does not need to be set, unless it does not work as expected.
-* 'TESTING': to execute the tests.
-* 'PRODUCTION': to run in production mode.
+### Running
+
+Before you can start here, you have to do all steps in the Setup section.
+
+**Tell starting point of application**
+
+```bash
+export FLASK_APP=fhe.py
+```
+
+**Configure the environment**
+
+Set the `ENV` variable and `DEBUG` to `true` if you are developing.
+
+* `development`: is the default one. Does not need to be set, unless it does not work as expected.
+* `testing`: to execute the tests.
+* `production`: to run in production mode.
+
+```bash
+export ENV=development
+export DEBUG=true
+```
+
+**Configure database**
 
 Set your database. The following example show how to connect to your postgreSQL database `fhe_collector`.
 
-```
+```bash
 export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
 ```
 
-**Start app**
+**Run**
 
-```
-export FLASK_APP=fhe.py
-export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
-export YOURAPPLICATION_MODE='DEVELOPMENT'
+Run the app as usual:
+
+```bash
 flask run
 ```
 
-## Development
+### Flask Commands
+
+To execute flask commands in the shell, the following pattern is used:
+
+```bash
+flask COMMAND <OPTIONAL>
+```
+
+Commands offered:
+* `import_from_csv`
+* `create_doi_urls`
+* `delete_all_dois`
+* `delete_all_urls`
+* `fb_requests`
+
+For more details on each command, look inside the code documentation.
 
 ### Database Migration
 
-Update your database after changes.
+After changing your SQLAlchemy models, you have to update your database. To add information about your changes, exchange "COMMENT" with your commit message.
 
 ```
 flask db migrate -m "COMMENT"
@@ -111,27 +153,28 @@ flask db upgrade
 
 ### Testing
 
-Set application mode and unset maybe existing database URI's.
+To execute the tests, set the application mode and unset database URI.
 
 ```
 export FLASK_APP=fhe.py
-export YOURAPPLICATION_MODE='TESTING'
+export ENV=testing
 ```
 
-If you set the database URI as an environment and you don't want to use it anymore, simply unset it.
+If you set the database URI as an environment variable and you don't want to use it anymore, simply unset it.
 
 ```
 unset SQLALCHEMY_DATABASE_URI
 ```
 **pytest**
 
+To execute the tests with pytest (as recommended), simply type:
 ```
 pytest
 ```
 
 **Coverage**
 
-Get test coverage of codebase.
+To get test coverage of codebase, use coverage.
 
 ```
 coverage run fhe.py
@@ -146,19 +189,19 @@ pytest --cov-report html --cov=app tests/
 ```
 **Coveralls**
 
-Local development
+To use Coveralls on local development:
 ```
 pytest tests/ --doctest-modules -v --cov=app
 ```
 
-Travis
+And to use Coveralls on Travis-CI
 ```
 pytest tests/ --doctest-modules -v --cov coveralls --cov-report term-missing
 ```
 
 ### Documentation
 
-Use Sphinx to create class and function documentation out of the codebase.
+Use Sphinx to create class and function documentation out of the doc-strings.
 
 ```
 cd docs/
@@ -173,23 +216,6 @@ To run the app on production, rename the [settings_production_sample.py](setting
 
 ```
 export FLASK_APP=fhe.py
-export YOURAPPLICATION_MODE='PRODUCTION'
+export ENV=production
+flask run
 ```
-
-## GLOSSAR
-
-**Coverage.py**
-
-Coverage.py is a tool for measuring code coverage of Python programs. It monitors your program, noting which parts of the code have been executed, then analyzes the source to identify code that could have been executed but was not. Coverage measurement is typically used to gauge the effectiveness of tests. It can show which parts of your code are being exercised by tests, and which are not.
-
-**Coveralls.io**
-
-Coveralls is a web service to help you track your code coverage over time, and ensure that all your new code is fully covered.
-
-**Travis CI**
-
-Travis CI is a hosted, distributed continuous integration service used to build and test software projects hosted at GitHub.
-
-**Sphinx**
-
-Sphinx is a tool that makes it easy to create intelligent and beautiful documentation. It can create reports in pdf and html.
