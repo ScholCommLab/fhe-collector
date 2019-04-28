@@ -54,8 +54,8 @@ def reset_db():
 
 
 @app.cli.command()
-@click.argument('filename', type=click.Path(exists=True))
-def import_from_csv(filename=None):
+@click.argument('filename', type=click.Path(exists=True), required=False)
+def import_data(filename=None):
     """Import raw data from csv file.
 
     The filepath can be manually passed with the argument `filename`.
@@ -70,7 +70,7 @@ def import_from_csv(filename=None):
     from app import import_dois_from_csv
 
     if not filename:
-        app.config['CSV_FILENAME']
+        filename = app.config['CSV_FILENAME']
     import_dois_from_csv(filename)
 
 
@@ -102,12 +102,10 @@ def create_unpaywall_urls():
 
 
 @app.cli.command()
-def create__fbrequest():
-    """Create the Facebook request.
-
-    """
-    from app import create__fbrequest
-    create__fbrequest(app.config['FB_APP_ID'], app.config['FB_APP_SECRET'])
+def create_fbrequests():
+    """Create the Facebook request."""
+    from app import fb_requests
+    fb_requests(app.config['FB_APP_ID'], app.config['FB_APP_SECRET'])
 
 
 @app.cli.command()
@@ -172,7 +170,6 @@ def import_tables(table_names):
     if 'fb_request' in table_names_tmp:
         table_names.append('fb_request')
 
-    print(table_names)
     for table_name in reversed(table_names):
         if table_name == 'doi':
             try:
@@ -234,6 +231,9 @@ def add_data():
                                 if entry['url_type'] not in url_type_list:
                                     response = 'URL type {} is not one of the allowed types.'.format(entry['url_type'])
                                     is_data_valid = False
+                            else:
+                                response = 'URL type is missing.'
+                                is_data_valid = False
                         if 'date' in entry:
                             if not isinstance(entry['date'], str):
                                 response = 'Date {} is no string.'.format(entry['date'])

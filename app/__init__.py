@@ -8,7 +8,6 @@
 
 
 from apscheduler.schedulers.background import BackgroundScheduler
-import csv
 from datetime import datetime
 from facebook import GraphAPI
 from json import dumps, loads
@@ -25,7 +24,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
-from sqlalchemy import create_engine
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -55,7 +53,9 @@ def import_dois_from_csv(filename):
     from app.models import Import
 
     try:
-        df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
+        filename = BASE_DIR + '/' + filename
+        print(filename)
+        df = pd.read_csv(filename, encoding='utf8')
         df = df.drop_duplicates(subset='doi')
         data = df.to_json(orient='records')
         imp = Import('<file '+filename+'>', data)
@@ -154,29 +154,32 @@ def store_data_to_database(data, import_id):
         is_valid = validate_doi(entry['doi'])
         # TODO: what if not valid? user does not get it back in the api response.
         if is_valid:
-            result_doi = Doi.query.filter_by(doi=entry['doi']).first()
-            if result_doi is None:
-                doi = Doi(
-                    doi=entry['doi'],
-                    import_id=import_id
-                )
-                db.session.add(doi)
-                dois_added += 1
-            else:
-                doi = result_doi
-                dois_already_in += 1
+            if entry['doi'] and entry['date']:
+                result_doi = Doi.query.filter_by(doi=entry['doi']).first()
+                if result_doi is None:
+                    doi = Doi(
+                        doi=entry['doi'],
+                        import_id=import_id,
+                        date_published=datetime.strptime(entry['date'], '%Y-%m-%d')
+                    )
+                    db.session.add(doi)
+                    dois_added += 1
+                else:
+                    doi = result_doi.doi
+                    dois_already_in += 1
             # store url
-            if entry['url']:
+            if entry['url'] and entry['url_type']:
                 result_url = Url.query.filter_by(url=entry['url']).first()
                 if result_url is None:
                     url = Url(
                         url=entry['url'],
                         doi=str(doi.doi),
-                        url_type='ojs'
+                        url_type=entry['url_type']
                     )
                     db.session.add(url)
                     urls_added += 1
                 else:
+                    url = result_url.url
                     urls_already_in += 1
             db.session.commit()
         doi_list.append(entry['doi'])
@@ -403,6 +406,7 @@ def fb_requests(app_id, app_secret):
                     'reaction_count': 0, 'comment_count': 0}}
     """
     from app.models import FBRequest
+    from app.models import Url
 
     # TODO: for what extended_user_access function? https://github.com/ScholCommLab/fhe-plos/blob/master/code/2_collect_private.py
 
@@ -416,29 +420,27 @@ def fb_requests(app_id, app_secret):
     except requests.exceptions.RequestException:
         raise Exception()
 
-    token = json.loads(response.text)
+    token = loads(response.text)
     fb_graph = GraphAPI(token['access_token'], version="2.10")
 
     fb_request_added = 0
     result_url = Url.query.all()
-    for row in result_url:
-        try:
-            url = row.url
-            result = fb_graph.get_object(id=url, fields="engagement,og_object")
-            err_msg = None
-        except Exception as e:
-            err_msg = str(e)
-            print(e)
-            result = None
-
-        if result:
-            fb_request = FBRequest(
-                url=row.url,
-                response=result
-            )
-            db.session.add(fb_request)
-            fb_request_added += 1
-    db.session.commit()
+    batch_size = 5
+    for i in range(0, len(result_url), batch_size):
+        batch = result_url[i:i + batch_size]
+        url_list = []
+        for row in batch:
+            url_list.append(row.url)
+        urls_response = fb_graph.get_objects(ids=url_list, fields="engagement,og_object")
+        for key, value in urls_response.items():
+            if urls_response:
+                fb_request = FBRequest(
+                    url=key,
+                    response=value
+                )
+                db.session.add(fb_request)
+                fb_request_added += 1
+        db.session.commit()
     print(fb_request_added, 'Facebook openGraph Request\'s added to database.')
 
 
