@@ -53,7 +53,7 @@ First, setup a postgreSQL instance on your computer. Please look for more inform
 
 *Create fhe_collector database*
 
-After you have setup PostgreSQL, you have to create a database called `fhe_collector` and give your default user the full rights to it. In Ubuntu this works like this:
+After you have setup PostgreSQL, you have to create a database called `fhe_collector` and give your default user the full rights to it. In Ubuntu/Linux this works like this:
 ```
 USERNAME_ADMIN='YOURADMINUSERNAME'
 USERNAME_OWNER='YOUROWNERUSERNAME'
@@ -62,7 +62,7 @@ sudo -u $USERNAME_ADMIN createdb -O $USERNAME_OWNER fhe_collector
 
 *Pass PostgreSQL database URI*
 
-If you want to use a custom SQL-Alchemy database connection, you can pass the proper string via an environment variable. For more information about this, look at [SLQAlchemy](https://www.sqlalchemy.org/).
+If you want to use a custom SQL-Alchemy database connection, you can pass the proper string via an environment variable. For more information about this, look at [SLQAlchemy](https://www.sqlalchemy.org/). Beware, that you need the username - maybe with a password - who can execute queries in it.
 
 ```bash
 export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'

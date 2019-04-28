@@ -30,13 +30,15 @@ class Doi(db.Model):
     ORM.
     """
     doi = db.Column(db.String(64), primary_key=True, nullable=False)
-    pmc_id = db.Column(db.String(256), unique=True)
-    pm_id = db.Column(db.String(256), unique=True)
+    pmc_id = db.Column(db.String(256))
+    pm_id = db.Column(db.String(256))
     import_id = db.Column(db.Integer, db.ForeignKey('import.id'), nullable=False)
 
-    def __init__(self, doi, import_id):
+    def __init__(self, doi, import_id, pmc_id=None, pm_id=None):
         self.doi = doi
         self.import_id = import_id
+        self.pmc_id = pmc_id
+        self.pm_id = pm_id
 
     def __repr__(self):
         """Default output method.
@@ -56,11 +58,14 @@ class Url(db.Model):
     url_type = db.Column(db.String(32), nullable=False)
     date_added = db.Column(db.DateTime(), nullable=False)
 
-    def __init__(self, url, doi, url_type):
+    def __init__(self, url, doi, url_type, date_added):
         self.url = url
         self.doi = doi
         self.url_type = url_type
-        self.date_added = datetime.now()
+        if date_added:
+            self.date_added = date_added
+        else:
+            self.date_added = datetime.now()
 
     def __repr__(self):
         return '<URL {}>'.format(self.url)

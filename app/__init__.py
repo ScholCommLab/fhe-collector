@@ -7,14 +7,28 @@
 """
 
 
-import os
+from apscheduler.schedulers.background import BackgroundScheduler
+import csv
+from datetime import datetime
+from facebook import GraphAPI
+from json import dumps, loads
 import logging
 from logging.handlers import RotatingFileHandler
-from apscheduler.schedulers.background import BackgroundScheduler
+import os
+import pandas as pd
+from psycopg2 import connect
+import re
+import requests
+import urllib.parse
+from tqdm import tqdm
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
+from sqlalchemy import create_engine
+from app.models import Doi
+from app.models import FBRequest
+from app.models import Url
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -23,50 +37,81 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 
-def import_from_csv(filename):
-    """Import csv file with doi's and OJS url's.
+def import_dois_from_csv(filename):
+    """Import DOI's from a csv file.
 
-    Imports the DOI's and OJS url's from a csv file into the database.
+    Imports the DOI's from a csv file into the database. It must contain an
+    attribute `doi`, and optionally `url`, `url_type` and `date`.
     For development purposes there is a file with 100 entries you can use.
-    With `--filename` you can pass the filename to the function.
 
-    Args:
-        filename: filename with path.
+    Parameters
+    ----------
+    filename : string
+        Filepath for the csv file.
+
+    Returns
+    -------
+    bool
+        True, if import worked, False if not.
+
     """
     from app.models import Import
-    import pandas as pd
-    from json import loads
 
     try:
         df = pd.read_csv(filename, encoding='utf8', parse_dates=True)
         df = df.drop_duplicates(subset='doi')
-        imp = Import('<file '+filename+'>', df.to_string())
+        data = df.to_json(orient='records')
+        imp = Import('<file '+filename+'>', data)
         db.session.add(imp)
         db.session.commit()
-        data = loads(df.to_json(orient='records'))
-        store_data_to_database(data, imp)
+        store_data_to_database(loads(data), imp.id)
+        return True
     except:
         print('Error: CSV file for import not working.')
         return False
 
 
-def import_from_api(data):
-    """Import data from API."""
+def import_dois_from_api(data):
+    """Import data coming from the API endpoint.
+
+    Parameters
+    ----------
+    data : type
+        Description of parameter `data`.
+
+    Returns
+    -------
+    string
+        Response text for API request.
+
+    """
     from app.models import Import
-    from json import dumps
 
     try:
         imp = Import('<api>', dumps(data))
         db.session.add(imp)
         db.session.commit()
-        response = store_data_to_database(data, imp)
+        response = store_data_to_database(data, imp.id)
         return response
     except:
-        return False
+        response = 'Error: Data import from API not working'
+        return response
 
 
 def validate_doi(doi):
-    import re
+    """Validate a DOI via RegEx.
+
+    Parameters
+    ----------
+    doi : string
+        A single DOI to be validated.
+
+    Returns
+    -------
+    bool
+        True, if DOI is valid, False if not.
+
+    """
     # validate doi
     patterns = [
         r"^10.\d{4,9}/[-._;()/:A-Z0-9]+$",
@@ -83,7 +128,22 @@ def validate_doi(doi):
 
 
 def store_data_to_database(data, import_id):
-    """Stores data to database."""
+    """Store data to database.
+
+    Parameters
+    ----------
+    data : list
+        List of dictionaries.
+    import_id : string
+        Id of Import() table, where the raw data was stored in.
+
+    Returns
+    -------
+    dict
+        Import metrics as dict(). Keys: 'doi_list', 'dois_added',
+        'dois_already_in', 'urls_added', 'urls_already_in'
+
+    """
     from app.models import Doi
     from app.models import Url
 
@@ -93,7 +153,7 @@ def store_data_to_database(data, import_id):
     urls_already_in = 0
     doi_list = []
 
-    for entry in data:
+    for entry in tqdm(data):
         is_valid = validate_doi(entry['doi'])
         # TODO: what if not valid? user does not get it back in the api response.
         if is_valid:
@@ -101,24 +161,26 @@ def store_data_to_database(data, import_id):
             if result_doi is None:
                 doi = Doi(
                     doi=entry['doi'],
-                    import_id=import_id.id
+                    import_id=import_id
                 )
                 db.session.add(doi)
                 dois_added += 1
             else:
+                doi = result_doi
                 dois_already_in += 1
             # store url
-            result_url = Url.query.filter_by(url=entry['url']).first()
-            if result_url is None:
-                url = Url(
-                    url=entry['url'],
-                    doi=str(doi.doi),
-                    url_type='ojs'
-                )
-                db.session.add(url)
-                urls_added += 1
-            else:
-                urls_already_in += 1
+            if entry['url']:
+                result_url = Url.query.filter_by(url=entry['url']).first()
+                if result_url is None:
+                    url = Url(
+                        url=entry['url'],
+                        doi=str(doi.doi),
+                        url_type='ojs'
+                    )
+                    db.session.add(url)
+                    urls_added += 1
+                else:
+                    urls_already_in += 1
             db.session.commit()
         doi_list.append(entry['doi'])
 
@@ -131,11 +193,13 @@ def store_data_to_database(data, import_id):
 
 
 def create_doi_urls():
-    """Create URL's from the identifier."""
+    """Create URL's from the identifier.
+
+    Creates the DOI URL's as part of the pre-processing.
+
+    """
     from app.models import Doi
     from app.models import Url
-    import requests
-    import urllib.parse
 
     urls_new_added = 0
     urls_new_already_in = 0
@@ -145,8 +209,7 @@ def create_doi_urls():
     urls_landingpage_already_in = 0
 
     result_doi = Doi.query.all()
-
-    for row in result_doi:
+    for row in tqdm(result_doi):
         doi_url_encoded = urllib.parse.quote(row.doi)
         # always overwrite the url at the beginning of each section
         # create new doi url
@@ -162,6 +225,7 @@ def create_doi_urls():
             urls_new_added += 1
         else:
             urls_new_already_in += 1
+
         # create old doi url
         url = 'http://dx.doi.org/{0}'.format(doi_url_encoded)
         result_url = Url.query.filter_by(url=url).first()
@@ -175,6 +239,7 @@ def create_doi_urls():
             urls_old_added += 1
         else:
             urls_old_already_in += 1
+
         # create doi landing page url
         url = 'https://doi.org/{0}'.format(doi_url_encoded)
         resp = requests.get(url, allow_redirects=True)
@@ -201,15 +266,21 @@ def create_doi_urls():
           'doi new landing page url\'s already in database.')
 
 
-def create_ncbi_urls():
+def create_ncbi_urls(ncbi_tool, email):
     """Create NCBI URL's from the identifier.
 
     https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
+
+    Parameters
+    ----------
+    ncbi_tool : string
+        Name of tool, which want to connect to the NCBI API.
+    email : string
+        Email related to the app, used as credential for the request.
+
     """
     from app.models import Doi
     from app.models import Url
-    import urllib.parse
-    import requests
 
     urls_pm_added = 0
     urls_pm_already_in = 0
@@ -218,14 +289,14 @@ def create_ncbi_urls():
 
     result_doi = Doi.query.all()
 
-    for row in result_doi:
-        # send request to NCBI API
+    for row in tqdm(result_doi):
         # TODO: allows up to 200 ids sent at the same time
+        # send request to NCBI API
         doi_url_encoded = urllib.parse.quote(row.doi)
         url = ' https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
         resp = requests.get(url, params={
-            'tool': app.config['NCBI_TOOL'],
-            'email': app.config['NCBI_EMAIL'],
+            'tool': ncbi_tool,
+            'email': email,
             'idtype': 'doi', 'versions': 'no', 'format': 'json'})
         resp = resp.json()
         if 'records' in resp:
@@ -267,27 +338,30 @@ def create_ncbi_urls():
     print(urls_pmc_already_in, 'PMC url\'s already in database.')
 
 
-def create_unpaywall_urls():
+def create_unpaywall_urls(email):
     """Create Unpaywall URL's from the identifier.
 
     https://unpaywall.org/products/api
+
+    Parameters
+    ----------
+    email : string
+        Email related to the app, used as credential for the request.
+
     """
     from app.models import Doi
     from app.models import Url
-    import urllib.parse
-    import requests
 
-    NCBI_EMAIL = app.config['NCBI_EMAIL']
     urls_unpaywall_added = 0
     urls_unpaywall_already_in = 0
 
     result_doi = Doi.query.all()
 
-    for row in result_doi:
+    for row in tqdm(result_doi):
         # send request to Unpaywall API
         url_dict = {}
         doi_url_encoded = urllib.parse.quote(row.doi)
-        url = '	https://api.unpaywall.org/v2/{0}?email={1}'.format(doi_url_encoded, NCBI_EMAIL)
+        url = 'https://api.unpaywall.org/v2/{0}?email={1}'.format(doi_url_encoded, ncbi_email)
         resp = requests.get(url)
         resp = resp.json()
         # check if response includes needed data
@@ -296,11 +370,14 @@ def create_unpaywall_urls():
         if 'oa_locations' in resp:
             for loc in resp['oa_locations']:
                 if 'url_for_pdf' in loc:
-                    url_dict['unpaywall_url_for_pdf'] = loc['url_for_pdf']
+                    if loc['url_for_pdf']:
+                        url_dict['unpaywall_url_for_pdf'] = loc['url_for_pdf']
                 if 'url' in loc:
-                    url_dict['unpaywall_url'] = loc['url']
+                    if loc['url']:
+                        url_dict['unpaywall_url'] = loc['url']
                 if 'url_for_landing_page' in loc:
-                    url_dict['unpaywall_url_for_landing_page'] = loc['url_for_landing_page']
+                    if loc['url_for_landing_page']:
+                        url_dict['unpaywall_url_for_landing_page'] = loc['url_for_landing_page']
 
         # store URL's in database
         for url_type, url in url_dict.items():
@@ -321,27 +398,20 @@ def create_unpaywall_urls():
     print(urls_unpaywall_already_in, 'Unpaywall url\'s already in database.')
 
 
-def fb_requests():
+def fb_requests(app_id, app_secret):
     """Get app access token.
 
     {'id': 'http://dx.doi.org/10.22230/src.2010v1n2a24',
     'engagement': { 'share_count': 0, 'comment_plugin_count': 0,
                     'reaction_count': 0, 'comment_count': 0}}
     """
-    # TODO: for what extended_user_access function? https://github.com/ScholCommLab/fhe-plos/blob/master/code/2_collect_private.py
-    from app.models import Url
     from app.models import FBRequest
-    from datetime import datetime
-    from facebook import GraphAPI
-    import json
-    import requests
 
-    FB_APP_ID = app.config['FB_APP_ID']
-    FB_APP_SECRET = app.config['FB_APP_SECRET']
+    # TODO: for what extended_user_access function? https://github.com/ScholCommLab/fhe-plos/blob/master/code/2_collect_private.py
 
     payload = {'grant_type': 'client_credentials',
-               'client_id': FB_APP_ID,
-               'client_secret': FB_APP_SECRET}
+               'client_id': app_id,
+               'client_secret': app_secret}
     try:
         response = requests.post(
             'https://graph.facebook.com/oauth/access_token?',
@@ -381,9 +451,10 @@ def delete_dois():
     try:
         dois_deleted = db.session.query(Doi).delete()
         db.session.commit()
+        print(dois_deleted, 'doi\'s deleted from database.')
     except:
         db.session.rollback()
-    print(dois_deleted, 'doi\'s deleted from database.')
+        print('ERROR: Doi\'s can not be deleted from database.')
 
 
 def delete_urls():
@@ -392,9 +463,10 @@ def delete_urls():
     try:
         urls_deleted = db.session.query(Url).delete()
         db.session.commit()
+        print(urls_deleted, 'url\'s deleted from database.')
     except:
         db.session.rollback()
-    print(urls_deleted, 'url\'s deleted from database.')
+        print('ERROR: Url\'s can not be deleted from database.')
 
 
 def delete_fbrequests():
@@ -403,29 +475,65 @@ def delete_fbrequests():
     try:
         fbrequests_deleted = db.session.query(FBRequest).delete()
         db.session.commit()
+        print(fbrequests_deleted, 'FBRequests\'s deleted from database.')
     except:
         db.session.rollback()
-    print(fbrequests_deleted, 'FBRequests\'s deleted from database.')
+        print('ERROR: Facebook requests\'s can not be deleted from database.')
 
 
-def export_data():
-    import csv
-    from app.models import Doi
-    from app.models import Import
-    from app.models import Url
-    table_list = [Doi, Url, FBRequest]
-    for table in table_list:
-        outfile = open(str(table)+'.csv', 'w')
-        outcsv = csv.writer(outfile)
-        records = db.session.query(MyModel).all()
-        [outcsv.writerow([getattr(curr, column.name) for column in MyTable.__mapper__.columns]) for curr in records]
-        # or maybe use outcsv.writerows(records)
+def export_tables_to_csv(table_names, db_uri):
+    """Short summary.
 
-        outfile.close()
+    Parameters
+    ----------
+    table_names : list
+        Description of parameter `table_names`.
+    db_uri : string
+        Description of parameter `db_uri`.
+
+    """
+    con = connect(db_uri)
+    cur = con.cursor()
+    filename_list = [BASE_DIR + '/app/static/export/'+datetime.today().strftime('%Y-%m-%d')+'_'+table+'.csv' for table in table_names]
+
+    for idx, filename in enumerate(filename_list):
+        sql = "COPY "+table_names[idx]+" TO STDOUT DELIMITER ',' CSV HEADER;"
+        cur.copy_expert(sql, open(filename, "w"))
+
+
+def import_tables_from_csv(table_names, db_uri, mode='overwrite'):
+    """Insert data from csv files into tables.
+
+    naming conventions for files: TABLENAME.csv
+    TABLENAME: `doi`, `fb_request` and `url`
+
+    No duplicates allowed!
+
+    """
+    # TODO: Add data to Import()
+    filename_list = [BASE_DIR + '/app/static/import/'+table+'.csv' for table in table_names]
+    table2model = {
+        'doi': Doi,
+        'fb_request': FBRequest,
+        'url': Url
+    }
+
+    for idx, filename in enumerate(filename_list):
+        model = table2model[table_names[idx]]
+        df = pd.read_csv(filename)
+        for row in df.to_dict(orient="records"):
+            if table_names[idx] == 'doi':
+                model = Doi(**row)
+            if table_names[idx] == 'url':
+                model = Url(**row)
+            if table_names[idx] == 'fb_request':
+                model = FBRequest(**row)
+            db.session.add(model)
+    db.session.commit()
 
 
 def create_app():
-    """Create application and loads settings."""
+    """Create application and load settings."""
     app = Flask(__name__)
 
     ENVIRONMENT = os.getenv('ENV', default='development')
