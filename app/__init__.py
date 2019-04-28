@@ -26,9 +26,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy import create_engine
-from app.models import Doi
-from app.models import FBRequest
-from app.models import Url
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -510,6 +507,9 @@ def import_tables_from_csv(table_names, db_uri, mode='overwrite'):
     No duplicates allowed!
 
     """
+    from app.models import Doi
+    from app.models import FBRequest
+    from app.models import Url
     # TODO: Add data to Import()
     filename_list = [BASE_DIR + '/app/static/import/'+table+'.csv' for table in table_names]
     table2model = {
@@ -529,7 +529,7 @@ def import_tables_from_csv(table_names, db_uri, mode='overwrite'):
             if table_names[idx] == 'fb_request':
                 model = FBRequest(**row)
             db.session.add(model)
-    db.session.commit()
+        db.session.commit()
 
 
 def create_app():

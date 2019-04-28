@@ -150,12 +150,12 @@ def export_tables(table_names):
 def import_tables(table_names):
     """Import data.
 
+    The table_names will be sorted, from doi -> url -> fb_request.
 
     Parameters
     ----------
     table_names : string
-        String with table names, seperated by comma. must be in order
-        of possible creation, from doi -> url -> fb_request.
+        String with table names, seperated by comma.
 
     """
     from app import delete_dois
@@ -163,7 +163,16 @@ def import_tables(table_names):
     from app import delete_urls
     from app import import_tables_from_csv
 
-    table_names = table_names.split(',')
+    table_names_tmp = [table_name.strip() for table_name in table_names.split(',')]
+    table_names = []
+    if 'doi' in table_names_tmp:
+        table_names.append('doi')
+    if 'url' in table_names_tmp:
+        table_names.append('url')
+    if 'fb_request' in table_names_tmp:
+        table_names.append('fb_request')
+
+    print(table_names)
     for table_name in reversed(table_names):
         if table_name == 'doi':
             try:
