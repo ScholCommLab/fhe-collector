@@ -28,15 +28,21 @@ class Doi(db.Model):
 
     Defines the publication data type with it's methods for useage of the Flask
     ORM.
+
+    date comes as YYYY-MM-DD
     """
     doi = db.Column(db.String(64), primary_key=True, nullable=False)
-    pmc_id = db.Column(db.String(256), unique=True)
-    pm_id = db.Column(db.String(256), unique=True)
+    pmc_id = db.Column(db.String(256))
+    pm_id = db.Column(db.String(256))
     import_id = db.Column(db.Integer, db.ForeignKey('import.id'), nullable=False)
+    date_published = db.Column(db.DateTime())
 
-    def __init__(self, doi, import_id):
+    def __init__(self, doi, import_id, date_published, pmc_id=None, pm_id=None):
         self.doi = doi
         self.import_id = import_id
+        self.date_published = date_published
+        self.pmc_id = pmc_id
+        self.pm_id = pm_id
 
     def __repr__(self):
         """Default output method.
@@ -53,14 +59,17 @@ class Url(db.Model):
     """
     url = db.Column(db.String(512), primary_key=True)
     doi = db.Column(db.String(64), db.ForeignKey('doi.doi'), nullable=False)
-    url_type = db.Column(db.String(32), nullable=False)
+    url_type = db.Column(db.String(32))
     date_added = db.Column(db.DateTime(), nullable=False)
 
-    def __init__(self, url, doi, url_type):
+    def __init__(self, url, doi, url_type, date_added=None):
         self.url = url
         self.doi = doi
         self.url_type = url_type
-        self.date_added = datetime.now()
+        if date_added:
+            self.date_added = date_added
+        else:
+            self.date_added = datetime.now()
 
     def __repr__(self):
         return '<URL {}>'.format(self.url)
