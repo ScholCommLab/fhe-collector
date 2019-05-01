@@ -1,9 +1,10 @@
 import click
 from json import dumps, loads
-from flask import request, jsonify
+from flask import jsonify
+from flask import render_template
+from flask import request
 from app import create_app
 from app import import_dois_from_csv
-
 
 app = create_app()
 app.app_context().push()
@@ -105,7 +106,8 @@ def create_unpaywall_urls():
 def create_fbrequests():
     """Create the Facebook request."""
     from app import fb_requests
-    fb_requests(app.config['FB_APP_ID'], app.config['FB_APP_SECRET'])
+    fb_requests(app.config['FB_APP_ID'], app.config['FB_APP_SECRET'],
+                app.config['FB_BATCH_SIZE'])
 
 
 @app.cli.command()
@@ -192,16 +194,16 @@ def import_tables(table_names):
 @app.route('/')
 @app.route('/index')
 def index():
-    return "Hello, World!"
+    return render_template('index.html', title='Home')
 
 
 @app.route('/api')
 @app.route('/api/v1')
 def api():
-    return "API Homepage"
+    return render_template('api.html', title='API')
 
 
-@app.route('/api/v1/add_data', methods=['POST'])
+@app.route('/api/v1/add_data', methods=['POST', 'GET'])
 def add_data():
     """Add data to database.
 
@@ -209,50 +211,54 @@ def add_data():
     Optional: url, date
     """
     response_status = 'error'
-    try:
-        if request.headers['Content-Type'] == 'application/json':
-            data = request.json
-            if isinstance(data, list):
-                is_data_valid = True
-                for entry in data:
-                    if 'doi' in entry:
-                        if not isinstance(entry['doi'], str):
-                            response = 'DOI {} is no string.'.format(entry['doi'])
-                            is_data_valid = False
-                        if 'url' in entry:
-                            if not isinstance(entry['url'], str):
-                                response = 'URL {} is no string.'.format(entry['url'])
-                                is_data_valid = False
-                            if 'url_type' in entry:
-                                if not isinstance(entry['url_type'], str):
-                                    response = 'URL type {} is no string.'.format(entry['url_type'])
-                                    is_data_valid = False
-                                url_type_list = ['ojs', 'doi_new', 'doi_old', 'doi_new_landingpage', 'unpaywall', 'pubmed', 'pubmedcentral']
-                                if entry['url_type'] not in url_type_list:
-                                    response = 'URL type {} is not one of the allowed types.'.format(entry['url_type'])
-                                    is_data_valid = False
-                            else:
-                                response = 'URL type is missing.'
-                                is_data_valid = False
-                        if 'date' in entry:
-                            if not isinstance(entry['date'], str):
-                                response = 'Date {} is no string.'.format(entry['date'])
-                                is_data_valid = False
-                    else:
-                        is_data_valid = False
-                        response = 'DOI is missing in {}.'.format(entry)
-                if is_data_valid:
-                    resp_func = import_dois_from_csv(data)
-                    if resp_func:
-                        response = resp_func
-                        response_status = 'ok'
-                    else:
-                        response = 'Error: JSON from API could not be stored in database.'
-            else:
-                response = 'No list of data in JSON.'
-        else:
-            response = 'No JSON delivered.'
-    except:
-        response = 'Undefined error.'
+    url_type_list = ['ojs', 'doi_new', 'doi_old', 'doi_new_landingpage', 'unpaywall', 'pubmed', 'pubmedcentral']
 
-    return jsonify({"status": response_status, 'content': response})
+    if request.method == 'POST':
+        try:
+            if request.headers['Content-Type'] == 'application/json':
+                data = request.json
+                if isinstance(data, list):
+                    is_data_valid = True
+                    for entry in data:
+                        if 'doi' in entry:
+                            if not isinstance(entry['doi'], str):
+                                response = 'DOI {} is no string.'.format(entry['doi'])
+                                is_data_valid = False
+                            if 'url' in entry:
+                                if not isinstance(entry['url'], str):
+                                    response = 'URL {} is no string.'.format(entry['url'])
+                                    is_data_valid = False
+                                if 'url_type' in entry:
+                                    if not isinstance(entry['url_type'], str):
+                                        response = 'URL type {} is no string.'.format(entry['url_type'])
+                                        is_data_valid = False
+                                    if entry['url_type'] not in url_type_list:
+                                        response = 'URL type {} is not one of the allowed types.'.format(entry['url_type'])
+                                        is_data_valid = False
+                                else:
+                                    response = 'URL type is missing.'
+                                    is_data_valid = False
+                            if 'date' in entry:
+                                if not isinstance(entry['date'], str):
+                                    response = 'Date {} is no string.'.format(entry['date'])
+                                    is_data_valid = False
+                        else:
+                            is_data_valid = False
+                            response = 'DOI is missing in {}.'.format(entry)
+                    if is_data_valid:
+                        resp_func = import_dois_from_csv(data)
+                        if resp_func:
+                            response = resp_func
+                            response_status = 'ok'
+                        else:
+                            response = 'Error: JSON from API could not be stored in database.'
+                else:
+                    response = 'No list of data in JSON.'
+            else:
+                response = 'No JSON delivered.'
+        except:
+            response = 'Undefined error.'
+
+        return jsonify({'status': response_status, 'content': response})
+    else:
+        return jsonify({'status': 'on', 'api_version': '1.0'})

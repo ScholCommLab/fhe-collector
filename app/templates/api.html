@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Facebook Hidden Engagement{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block header %}
+<h1 class="text-center">API Version 1.0</h1>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+  <h2><code>/api/v1</code></h2>
+  <p><a href="{{ url_for('api') }}" title="API Version 1.0">/api/v1</a></p>
+  <p>API version 1.0</p>
+  <h4><code>/api/v1/add_data</code></h4>
+  <p><a href="{{ url_for('add_data') }}" title="API Version 1.0 add_data/ endpoint">/api/v1/add_data</a></p>
+  <p>Add raw data to the app. Data must come in the format specified <a href="https://github.com/ScholCommLab/fhe-collector/wiki/Data" title="/add_data API endpoint specificiation">here</a></p>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
