@@ -1,4 +1,6 @@
 data/
+app/static/import/*
+app/static/export/*
 venv/
 build/
 dist/

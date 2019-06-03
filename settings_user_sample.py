@@ -1,9 +1,11 @@
 """Sample file for user settings."""
 
-ADMIN = ''
+CSV_FILENAME = ''
+ADMIN_EMAIL = ''
+APP_EMAIL = ''
+SECRET_KEY = ''
+NCBI_TOOL = ''
 FB_APP_ID = ''
 FB_APP_SECRET = ''
+FB_RATELIMIT = 'INTEGER'
 BATCH_SIZE = 'INTEGER'
-NCBI_EMAIL = ''
-NCBI_TOOL = ''
-SECRET_KEY = ''
