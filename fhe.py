@@ -1,57 +1,13 @@
 import click
-from json import dumps, loads
 from flask import jsonify
 from flask import render_template
 from flask import request
 from app import create_app
-from app import import_dois_from_csv
+from app import import_dois_from_api
+
 
 app = create_app()
 app.app_context().push()
-
-
-# TODO: show progress of api requests in shell
-@app.cli.command()
-def setup_db():
-    """Insert raw data and pre-processed data to database.
-
-    Command for shell execution.
-
-    """
-    import_dois_from_csv()
-    create_doi_urls()
-    create_ncbi_urls()
-    create_unpaywall_urls()
-
-
-@app.cli.command()
-def delete_db():
-    """Delete all database entries.
-
-    Command for shell execution.
-
-    """
-    delete_fbrequests()
-    delete_urls()
-    delete_dois()
-
-
-@app.cli.command()
-def reset_import():
-    """Reset database setup.
-
-    Command for shell execution.
-
-    """
-    delete_urls()
-    delete_dois()
-    import_from_csv()
-
-
-@app.cli.command()
-def reset_db():
-    delete_db()
-    setup_db()
 
 
 @app.cli.command()
@@ -65,7 +21,7 @@ def import_data(filename=None):
     ----------
     filename : string
         Filepath to the csv file. Defaults to None, if not passed as an
-        argument via the command line.
+        argument via the command line. Relative to root.
 
     """
     from app import import_dois_from_csv
@@ -76,28 +32,53 @@ def import_data(filename=None):
 
 
 @app.cli.command()
-def create_doi_urls():
-    """Create the doi Url's.
+def delete_import():
+    """Create the doi Url's."""
+    from app import delete_dois
+    from app import delete_urls
+    delete_urls()
+    delete_dois()
 
-    """
-    from app import create_doi_urls
-    create_doi_urls()
+@app.cli.command()
+def create_doi_urls():
+    """Create the doi Url's."""
+    from app import create_doi_old_urls
+    from app import create_doi_new_urls
+    create_doi_old_urls()
+    create_doi_new_urls()
+
+
+@app.cli.command()
+def create_doi_new_urls():
+    """Create the doi Url's."""
+    from app import create_doi_new_urls
+    create_doi_new_urls()
+
+
+@app.cli.command()
+def create_doi_old_urls():
+    """Create the doi Url's."""
+    from app import create_doi_old_urls
+    create_doi_old_urls()
+
+
+@app.cli.command()
+def create_doi_lp_urls():
+    """Create the doi Url's."""
+    from app import create_doi_lp_urls
+    create_doi_lp_urls()
 
 
 @app.cli.command()
 def create_ncbi_urls():
-    """Create the NCBI Url's.
-
-    """
+    """Create the NCBI Url's."""
     from app import create_ncbi_urls
     create_ncbi_urls(app.config['NCBI_TOOL'], app.config['APP_EMAIL'])
 
 
 @app.cli.command()
 def create_unpaywall_urls():
-    """Create the Unpaywall Url's.
-
-    """
+    """Create the Unpaywall Url's."""
     from app import create_unpaywall_urls
     create_unpaywall_urls(app.config['APP_EMAIL'])
 
@@ -112,26 +93,47 @@ def create_fbrequests():
 
 @app.cli.command()
 def delete_dois():
+    """Delete all entries in doi table."""
     from app import delete_dois
     delete_dois()
 
 
 @app.cli.command()
 def delete_urls():
+    """Delete all entries in url table."""
     from app import delete_urls
     delete_urls()
 
 
 @app.cli.command()
+def delete_apirequests():
+    """Delete all entries in url table."""
+    from app import delete_apirequests
+    delete_apirequests()
+
+
+@app.cli.command()
 def delete_fbrequests():
+    """Delete all entries in fbrequests table."""
     from app import delete_fbrequests
     delete_fbrequests()
 
 
 @app.cli.command()
+def delete_data():
+    """Create the doi Url's."""
+    from app import delete_dois
+    from app import delete_urls
+    from app import delete_apirequests
+    delete_apirequests()
+    delete_urls()
+    delete_dois()
+
+
+@app.cli.command()
 @click.argument('table_names')
 def export_tables(table_names):
-    """Short summary.
+    """Export tables passed as string, seperated by comma.
 
     Parameters
     ----------
@@ -163,7 +165,8 @@ def import_tables(table_names):
     from app import delete_urls
     from app import import_tables_from_csv
 
-    table_names_tmp = [table_name.strip() for table_name in table_names.split(',')]
+    table_names_tmp = [table_name.strip() for table_name in
+                       table_names.split(',')]
     table_names = []
     if 'doi' in table_names_tmp:
         table_names.append('doi')
@@ -194,18 +197,20 @@ def import_tables(table_names):
 @app.route('/')
 @app.route('/index')
 def index():
+    """Homepage."""
     return render_template('index.html', title='Home')
 
 
 @app.route('/api')
 @app.route('/api/v1')
 def api():
+    """Api page."""
     return render_template('api.html', title='API')
 
 
 @app.route('/api/v1/add_data', methods=['POST', 'GET'])
 def add_data():
-    """Add data to database.
+    """Add data via an API endpoint to the database.
 
     Required: doi
     Optional: url, date
@@ -215,47 +220,53 @@ def add_data():
 
     if request.method == 'POST':
         try:
-            if request.headers['Content-Type'] == 'application/json':
-                data = request.json
-                if isinstance(data, list):
-                    is_data_valid = True
-                    for entry in data:
-                        if 'doi' in entry:
-                            if not isinstance(entry['doi'], str):
-                                response = 'DOI {} is no string.'.format(entry['doi'])
-                                is_data_valid = False
-                            if 'url' in entry:
-                                if not isinstance(entry['url'], str):
-                                    response = 'URL {} is no string.'.format(entry['url'])
-                                    is_data_valid = False
-                                if 'url_type' in entry:
-                                    if not isinstance(entry['url_type'], str):
-                                        response = 'URL type {} is no string.'.format(entry['url_type'])
+            if 'X-API-Key' in request.headers:
+                if app.config['API_TOKEN'] == request.headers['X-API-Key']:
+                    if request.headers['Content-Type'] == 'application/json':
+                        data = request.json
+                        if isinstance(data, list):
+                            is_data_valid = True
+                            for entry in data:
+                                if 'doi' in entry:
+                                    if not isinstance(entry['doi'], str):
+                                        response = 'DOI {} is no string.'.format(entry['doi'])
                                         is_data_valid = False
-                                    if entry['url_type'] not in url_type_list:
-                                        response = 'URL type {} is not one of the allowed types.'.format(entry['url_type'])
-                                        is_data_valid = False
+                                    if 'url' in entry:
+                                        if not isinstance(entry['url'], str):
+                                            response = 'URL {} is no string.'.format(entry['url'])
+                                            is_data_valid = False
+                                        if 'url_type' in entry:
+                                            if not isinstance(entry['url_type'], str):
+                                                response = 'URL type {} is no string.'.format(entry['url_type'])
+                                                is_data_valid = False
+                                            if entry['url_type'] not in url_type_list:
+                                                response = 'URL type {} is not one of the allowed types.'.format(entry['url_type'])
+                                                is_data_valid = False
+                                        else:
+                                            response = 'URL type is missing.'
+                                            is_data_valid = False
+                                    if 'date' in entry:
+                                        if not isinstance(entry['date'], str):
+                                            response = 'Date {} is no string.'.format(entry['date'])
+                                            is_data_valid = False
                                 else:
-                                    response = 'URL type is missing.'
                                     is_data_valid = False
-                            if 'date' in entry:
-                                if not isinstance(entry['date'], str):
-                                    response = 'Date {} is no string.'.format(entry['date'])
-                                    is_data_valid = False
+                                    response = 'DOI is missing in {}.'.format(entry)
+                            if is_data_valid:
+                                resp_func = import_dois_from_api(data)
+                                if resp_func:
+                                    response = resp_func
+                                    response_status = 'ok'
+                                else:
+                                    response = 'Error: JSON from API could not be stored in database.'
                         else:
-                            is_data_valid = False
-                            response = 'DOI is missing in {}.'.format(entry)
-                    if is_data_valid:
-                        resp_func = import_dois_from_csv(data)
-                        if resp_func:
-                            response = resp_func
-                            response_status = 'ok'
-                        else:
-                            response = 'Error: JSON from API could not be stored in database.'
+                            response = 'No list of data in JSON.'
+                    else:
+                        response = 'No JSON delivered.'
                 else:
-                    response = 'No list of data in JSON.'
+                    response = 'Authentication token not right.'
             else:
-                response = 'No JSON delivered.'
+                response = 'Authentication token not passed.'
         except:
             response = 'Undefined error.'
 

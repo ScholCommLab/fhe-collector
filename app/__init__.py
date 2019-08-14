@@ -35,14 +35,15 @@ migrate = Migrate()
 def import_dois_from_csv(filename):
     """Import DOI's from a csv file.
 
-    Imports the DOI's from a csv file into the database. It must contain an
+    Imports the DOI's from a csv file into the database. Stores the raw data
+    and adds dois in table.also the It must contain an
     attribute `doi`, and optionally `url`, `url_type` and `date`.
-    For development purposes there is a file with 100 entries you can use.
+    For test purposes, there is a file with 100 entries you can use.
 
     Parameters
     ----------
     filename : string
-        Filepath for the csv file.
+        Filepath for the csv file, relative from the root dir.
 
     Returns
     -------
@@ -53,15 +54,15 @@ def import_dois_from_csv(filename):
     from app.models import Import
 
     try:
-        filename = BASE_DIR + '/' + filename
+        filename = '{0}/{1}'.format(BASE_DIR, filename)
         print(filename)
         df = pd.read_csv(filename, encoding='utf8')
         df = df.drop_duplicates(subset='doi')
         data = df.to_json(orient='records')
-        imp = Import('<file '+filename+'>', data)
-        db.session.add(imp)
+        db_imp = Import('<file '+filename+'>', data)
+        db.session.add(db_imp)
         db.session.commit()
-        store_data_to_database(loads(data), imp.id)
+        store_data_to_database(loads(data), db_imp.id)
         return True
     except:
         print('Error: CSV file for import not working.')
@@ -96,7 +97,7 @@ def import_dois_from_api(data):
 
 
 def validate_doi(doi):
-    """Validate a DOI via RegEx.
+    """Validate a DOI via regular expressions.
 
     Parameters
     ----------
@@ -125,30 +126,28 @@ def validate_doi(doi):
 
 
 def store_data_to_database(data, import_id):
-    """Store data to database.
+    """Store data to table Doi and Url.
 
     Parameters
     ----------
     data : list
         List of dictionaries.
     import_id : string
-        Id of Import() table, where the raw data was stored in.
+        Id of ``Import()`` table, where the raw data was stored in.
 
     Returns
     -------
     dict
-        Import metrics as dict(). Keys: 'doi_list', 'dois_added',
-        'dois_already_in', 'urls_added', 'urls_already_in'
+        Import metrics as ``dict``. Keys: ``doi_list``, ``dois_added``,
+        ``dois_already_in``, ``urls_added`` and ``urls_already_in``.
 
     """
     from app.models import Doi
     from app.models import Url
 
     dois_added = 0
-    dois_already_in = 0
     urls_added = 0
-    urls_already_in = 0
-    doi_list = []
+    dois_added_list = []
 
     for entry in tqdm(data):
         is_valid = validate_doi(entry['doi'])
@@ -157,42 +156,45 @@ def store_data_to_database(data, import_id):
             if entry['doi'] and entry['date']:
                 result_doi = Doi.query.filter_by(doi=entry['doi']).first()
                 if result_doi is None:
-                    doi = Doi(
-                        doi=entry['doi'],
+                    doi = entry['doi']
+                    db_doi = Doi(
+                        doi=doi,
                         import_id=import_id,
-                        date_published=datetime.strptime(entry['date'], '%Y-%m-%d')
+                        date_published=datetime.strptime(entry['date'], '%Y-%m-%d'),
+                        is_valid=True
                     )
-                    db.session.add(doi)
+                    db.session.add(db_doi)
+                    db.session.commit()
                     dois_added += 1
+                    dois_added_list.append(entry['doi'])
                 else:
                     doi = result_doi.doi
-                    dois_already_in += 1
+            else:
+                print('Entry {0} is not valid'.format(entry))
             # store url
             if entry['url'] and entry['url_type']:
-                result_url = Url.query.filter_by(url=entry['url']).first()
-                if result_url is None:
-                    url = Url(
-                        url=entry['url'],
-                        doi=str(doi.doi),
+                url = entry['url']
+                if Url.query.filter_by(url=url).first() is None:
+                    db_url = Url(
+                        url=url,
+                        doi=doi,
                         url_type=entry['url_type']
                     )
-                    db.session.add(url)
+                    db.session.add(db_url)
+                    db.session.commit()
                     urls_added += 1
                 else:
-                    url = result_url.url
-                    urls_already_in += 1
-            db.session.commit()
-        doi_list.append(entry['doi'])
+                    pass
+        else:
+            print('WARNING: DOI {} is not valid.'.format(entry['doi']))
 
-    print(dois_added, 'doi\'s added to database.')
-    print(dois_already_in, 'doi\'s already in database.')
-    print(urls_added, 'url\'s added to database.')
-    print(urls_already_in, 'url\'s already in database.')
+    print('{0} doi\'s added to database.'.format(dois_added))
+    print('{0} url\'s added to database.'.format(urls_added))
 
-    return {'doi_list': doi_list, 'dois_added': dois_added, 'dois_already_in': dois_already_in, 'urls_added': urls_added, 'urls_already_in': urls_already_in}
+    return {'dois_added_list': dois_added_list, 'dois_added': dois_added, 'urls_added': urls_added}
 
 
-def create_doi_urls():
+def create_doi_new_urls():
     """Create URL's from the identifier.
 
     Creates the DOI URL's as part of the pre-processing.
@@ -201,72 +203,95 @@ def create_doi_urls():
     from app.models import Doi
     from app.models import Url
 
-    urls_new_added = 0
-    urls_new_already_in = 0
-    urls_old_added = 0
-    urls_old_already_in = 0
-    urls_landingpage_added = 0
-    urls_landingpage_already_in = 0
+    urls_added = 0
 
-    result_doi = Doi.query.all()
-    for row in tqdm(result_doi):
-        doi_url_encoded = urllib.parse.quote(row.doi)
+    for d in tqdm(db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_doi_new == False).all()):
+        doi_url_encoded = urllib.parse.quote(d.doi)
         # always overwrite the url at the beginning of each section
-        # create new doi url
         url = 'https://doi.org/{0}'.format(doi_url_encoded)
-        result_url = Url.query.filter_by(url=url).first()
-        if result_url is None:
-            url = Url(
+        if Url.query.filter_by(url=url).first() is None:
+            db_url = Url(
                 url=url,
-                doi=row.doi,
+                doi=d.doi,
                 url_type='doi_new'
             )
-            db.session.add(url)
-            urls_new_added += 1
-        else:
-            urls_new_already_in += 1
+            d.url_doi_new = True
+            db.session.add(db_url)
+            db.session.commit()
+            urls_added += 1
 
-        # create old doi url
+    print('{0} new doi url\'s added to database.'.format(urls_added))
+
+
+def create_doi_old_urls():
+    """Create URL's from the identifier.
+
+    Creates the DOI URL's as part of the pre-processing.
+
+    """
+    from app.models import Doi
+    from app.models import Url
+
+    urls_added = 0
+
+    for d in tqdm(db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_doi_old == False).all()):
+        doi_url_encoded = urllib.parse.quote(d.doi)
         url = 'http://dx.doi.org/{0}'.format(doi_url_encoded)
-        result_url = Url.query.filter_by(url=url).first()
-        if result_url is None:
-            url = Url(
+        if Url.query.filter_by(url=url).first() is None:
+            db_url = Url(
                 url=url,
-                doi=row.doi,
+                doi=d.doi,
                 url_type='doi_old'
             )
-            db.session.add(url)
-            urls_old_added += 1
-        else:
-            urls_old_already_in += 1
+            d.url_doi_old = True
+            db.session.add(db_url)
+            db.session.commit()
+            urls_added += 1
 
-        # create doi landing page url
+    print('{0} old doi url\'s added to database.'.format(urls_added))
+
+
+def create_doi_lp_urls():
+    """Create URL's from the identifier.
+
+    Creates the DOI URL's as part of the pre-processing.
+
+    """
+    from app.models import APIRequest
+    from app.models import Doi
+    from app.models import Url
+
+    urls_added = 0
+
+    # create doi landing page url
+    for d in tqdm(db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_doi_lp == False).all()):
+        doi_url_encoded = urllib.parse.quote(d.doi)
         url = 'https://doi.org/{0}'.format(doi_url_encoded)
         resp = requests.get(url, allow_redirects=True)
-        url = resp.url
-        result_url = Url.query.filter_by(url=url).first()
-        if result_url is None:
-            url = Url(
-                url=url,
-                doi=row.doi,
+        resp_url = resp.url
+        db_api = APIRequest(
+            doi=d.doi,
+            request_url=url,
+            request_type='doi_landingpage',
+            response_content=resp.content,
+            response_status=resp.status_code
+        )
+        db.session.add(db_api)
+        if Url.query.filter_by(url=resp_url).first() is None:
+            db_url = Url(
+                url=resp_url,
+                doi=d.doi,
                 url_type='doi_landingpage'
             )
-            db.session.add(url)
-            urls_landingpage_added += 1
-        else:
-            urls_landingpage_already_in += 1
-        db.session.commit()
-    print(urls_new_added, 'doi new url\'s added to database.')
-    print(urls_new_already_in, 'doi new url\'s already in database.')
-    print(urls_old_added, 'doi old url\'s added to database.')
-    print(urls_old_already_in, 'doi old url\'s already in database.')
-    print(urls_landingpage_added,
-          'doi new landing page url\'s added to database.')
-    print(urls_landingpage_already_in,
-          'doi new landing page url\'s already in database.')
+            d.url_doi_lp = True
+            db.session.add(db_url)
+            db.session.commit()
+            urls_added += 1
+
+    print('{0} doi new landing page doi url\'s added to database.'.format(urls_added))
 
 
-def create_ncbi_urls(ncbi_tool, email):
+def create_ncbi_urls(ncbi_tool, ncbi_email):
     """Create NCBI URL's from the identifier.
 
     https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
@@ -279,63 +304,68 @@ def create_ncbi_urls(ncbi_tool, email):
         Email related to the app, used as credential for the request.
 
     """
+    from app.models import APIRequest
     from app.models import Doi
     from app.models import Url
 
     urls_pm_added = 0
-    urls_pm_already_in = 0
     urls_pmc_added = 0
-    urls_pmc_already_in = 0
 
-    result_doi = Doi.query.all()
-
-    for row in tqdm(result_doi):
+    for d in tqdm(db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_pm == False or Doi.url_pmc == False).all()):
         # TODO: allows up to 200 ids sent at the same time
         # send request to NCBI API
-        doi_url_encoded = urllib.parse.quote(row.doi)
-        url = ' https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
+        doi_url_encoded = urllib.parse.quote(d.doi)
+        url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
         resp = requests.get(url, params={
             'tool': ncbi_tool,
-            'email': email,
-            'idtype': 'doi', 'versions': 'no', 'format': 'json'})
-        resp = resp.json()
-        if 'records' in resp:
-            # create PMC url
-            if 'pmcid' in resp['records']:
-                url = 'https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/'.format(
-                    resp['records']['pmcid'])
-                result_url = Url.query.filter_by(url=url).first()
-                if result_url is None:
-                    url = Url(
-                        url=url,
-                        doi=row.doi,
-                        url_type='pmc'
-                    )
-                    db.session.add(url)
-                    urls_pmc_added += 1
-                else:
-                    urls_pmc_already_in += 1
-            # create PM url
-            if 'pmid' in resp['records']:
-                url = 'https://www.ncbi.nlm.nih.gov/pubmed/{0}'.format(
-                    resp['records']['pmid'])
-                result_url = Url.query.filter_by(url=url).first()
-                if result_url is None:
-                    url = Url(
-                        url=url,
-                        doi=row.doi,
-                        url_type='pm'
-                    )
-                    db.session.add(url)
-                    urls_pm_added += 1
-                else:
-                    urls_pm_already_in += 1
+            'email': ncbi_email,
+            'idtype': 'doi',
+            'versions': 'no',
+            'format': 'json'
+        })
+        resp_data = resp.json()
+        db_ncbi = APIRequest(
+            doi=d.doi,
+            request_url=url,
+            request_type='ncbi',
+            response_content=dumps(resp_data),
+            response_status=resp.status_code
+        )
+        db.session.add(db_ncbi)
         db.session.commit()
 
-    print(urls_pm_added, 'PM url\'s added to database.')
-    print(urls_pm_already_in, 'PM url\'s already in database.')
-    print(urls_pmc_added, 'PMC url\'s added to database.')
-    print(urls_pmc_already_in, 'PMC url\'s already in database.')
+        if 'records' in resp_data:
+            # create PMC url
+            if 'pmcid' in resp_data['records']:
+                url_pmc = 'https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/'.format(
+                    resp_data['records']['pmcid'])
+                if Url.query.filter_by(url=url_pmc).first() is None:
+                    db_url_pmc = Url(
+                        url=url_pmc,
+                        doi=d.doi,
+                        url_type='pmc'
+                    )
+                    d.url_pmc = True
+                    db.session.add(db_url_pmc)
+                    db.session.commit()
+                    urls_pmc_added += 1
+            # create PM url
+            if 'pmid' in resp_data['records']:
+                url_pm = 'https://www.ncbi.nlm.nih.gov/pubmed/{0}'.format(
+                    resp_data['records']['pmid'])
+                if Url.query.filter_by(url=url_pm).first() is None:
+                    db_url_pm = Url(
+                        url=url_pm,
+                        doi=d.doi,
+                        url_type='pm'
+                    )
+                    d.url_pm = True
+                    db.session.add(db_url_pm)
+                    db.session.commit()
+                    urls_pm_added += 1
+
+    print('{0} PM url\'s added to database.'.format(urls_pm_added))
+    print('{0} PMC url\'s added to database.'.format(urls_pmc_added))
 
 
 def create_unpaywall_urls(email):
@@ -349,21 +379,29 @@ def create_unpaywall_urls(email):
         Email related to the app, used as credential for the request.
 
     """
+    from app.models import APIRequest
     from app.models import Doi
     from app.models import Url
 
     urls_unpaywall_added = 0
-    urls_unpaywall_already_in = 0
 
-    result_doi = Doi.query.all()
-
-    for row in tqdm(result_doi):
+    for d in tqdm(db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_unpaywall == False).all()):
         # send request to Unpaywall API
         url_dict = {}
-        doi_url_encoded = urllib.parse.quote(row.doi)
-        url = 'https://api.unpaywall.org/v2/{0}?email={1}'.format(doi_url_encoded, ncbi_email)
+        doi_url_encoded = urllib.parse.quote(d.doi)
+        url = 'https://api.unpaywall.org/v2/{0}?email={1}'.format(doi_url_encoded, email)
         resp = requests.get(url)
-        resp = resp.json()
+        resp_data = resp.json()
+        db_api = APIRequest(
+            doi=d.doi,
+            request_url=url,
+            request_type='unpaywall',
+            response_content=dumps(resp_data),
+            response_status=resp.status_code
+        )
+        db.session.add(db_api)
+        db.session.commit()
+
         # check if response includes needed data
         if 'doi_url' in resp:
             url_dict['unpaywall_doi_url'] = resp['doi_url']
@@ -383,32 +421,28 @@ def create_unpaywall_urls(email):
         for url_type, url in url_dict.items():
             result_url = Url.query.filter_by(url=url).first()
             if result_url is None:
-                url = Url(
+                db_url = Url(
                     url=url,
-                    doi=row.doi,
+                    doi=d.doi,
                     url_type=url_type
                 )
-                db.session.add(url)
+                db.session.add(db_url)
+                db.session.commit()
                 urls_unpaywall_added += 1
-            else:
-                urls_unpaywall_already_in += 1
-        db.session.commit()
 
-    print(urls_unpaywall_added, 'Unpaywall url\'s added to database.')
-    print(urls_unpaywall_already_in, 'Unpaywall url\'s already in database.')
+    print('{0} Unpaywall url\'s added to database.'.format(urls_unpaywall_added))
 
 
-def fb_requests(app_id, app_secret):
+def fb_requests(app_id, app_secret, batch_size):
     """Get app access token.
 
+    Example Response:
     {'id': 'http://dx.doi.org/10.22230/src.2010v1n2a24',
     'engagement': { 'share_count': 0, 'comment_plugin_count': 0,
                     'reaction_count': 0, 'comment_count': 0}}
     """
     from app.models import FBRequest
     from app.models import Url
-
-    # TODO: for what extended_user_access function? https://github.com/ScholCommLab/fhe-plos/blob/master/code/2_collect_private.py
 
     payload = {'grant_type': 'client_credentials',
                'client_id': app_id,
@@ -425,23 +459,24 @@ def fb_requests(app_id, app_secret):
 
     fb_request_added = 0
     result_url = Url.query.all()
-    batch_size = 5
+
     for i in range(0, len(result_url), batch_size):
         batch = result_url[i:i + batch_size]
         url_list = []
         for row in batch:
             url_list.append(row.url)
-        urls_response = fb_graph.get_objects(ids=url_list, fields="engagement,og_object")
+        urls_response = fb_graph.get_objects(ids=url_list,
+                                             fields="engagement,og_object")
         for key, value in urls_response.items():
             if urls_response:
-                fb_request = FBRequest(
+                db_fb_request = FBRequest(
                     url=key,
                     response=value
                 )
-                db.session.add(fb_request)
+                db.session.add(db_fb_request)
                 fb_request_added += 1
         db.session.commit()
-    print(fb_request_added, 'Facebook openGraph Request\'s added to database.')
+    print('{0} Facebook openGraph request\'s added to database.'.format(fb_request_added))
 
 
 def delete_dois():
@@ -480,6 +515,18 @@ def delete_fbrequests():
         print('ERROR: Facebook requests\'s can not be deleted from database.')
 
 
+def delete_apirequests():
+    """Delete all api requests."""
+    from app.models import APIRequest
+    try:
+        apirequests_deleted = db.session.query(APIRequest).delete()
+        db.session.commit()
+        print(apirequests_deleted, 'APIRequests\'s deleted from database.')
+    except:
+        db.session.rollback()
+        print('ERROR: API requests\'s can not be deleted from database.')
+
+
 def export_tables_to_csv(table_names, db_uri):
     """Short summary.
 
@@ -506,7 +553,7 @@ def import_tables_from_csv(table_names, db_uri, mode='overwrite'):
     naming conventions for files: TABLENAME.csv
     TABLENAME: `doi`, `fb_request` and `url`
 
-    No duplicates allowed!
+    No duplicates allowed. doi ID's must be unique and same between csv files.
 
     """
     from app.models import Doi
@@ -526,9 +573,9 @@ def import_tables_from_csv(table_names, db_uri, mode='overwrite'):
         for row in df.to_dict(orient="records"):
             if table_names[idx] == 'doi':
                 model = Doi(**row)
-            if table_names[idx] == 'url':
+            elif table_names[idx] == 'url':
                 model = Url(**row)
-            if table_names[idx] == 'fb_request':
+            elif table_names[idx] == 'fb_request':
                 model = FBRequest(**row)
             db.session.add(model)
         db.session.commit()
@@ -573,7 +620,9 @@ def create_app():
     app.register_blueprint(main_bp)
 
     # scheduler = BackgroundScheduler()
-    # scheduler.add_job(hello_job, trigger='interval', seconds=3)
+    # rate_limit = app.config['FB_HOURLY_RATELIMIT']
+    # rate_intervall = 3600 / rate_limit
+    # scheduler.add_job(, trigger='interval', seconds=rate_intervall)
     # scheduler.start()
 
     if not app.debug and not app.testing:

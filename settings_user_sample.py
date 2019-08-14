@@ -1,5 +1,6 @@
 """Sample file for user settings."""
 
+API_TOKEN = ''
 CSV_FILENAME = ''
 ADMIN_EMAIL = ''
 APP_EMAIL = ''
@@ -7,5 +8,5 @@ SECRET_KEY = ''
 NCBI_TOOL = ''
 FB_APP_ID = ''
 FB_APP_SECRET = ''
-FB_RATELIMIT = 'INTEGER'
-BATCH_SIZE = 'INTEGER'
+FB_HOURLY_RATELIMIT = 'INTEGER'
+FB_BATCH_SIZE = 'INTEGER'
