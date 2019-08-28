@@ -143,7 +143,7 @@ def delete_data():
 
 
 @app.cli.command()
-@click.argument('table_names')
+@click.argument('table_names', required=False)
 def export_data(table_names):
     """Export tables passed as string, seperated by comma.
 

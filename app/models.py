@@ -45,13 +45,13 @@ class Doi(db.Model):
     url_pm = db.Column(db.Boolean, nullable=False)
     url_pmc = db.Column(db.Boolean, nullable=False)
     url_unpaywall = db.Column(db.Boolean, nullable=False)
-    is_valid = db.Column(db.Boolean, default=False)
+    is_valid = db.Column(db.Boolean)
 
-    def __init__(self, doi, date_published, import_id, pmc_id=None, pm_id=None, url_doi_new=None, url_doi_old=None, url_doi_lp=None, url_pm=None, url_pmc=None, url_unpaywall=None, is_valid=None):
+    def __init__(self, doi, date_published, import_id, pmc_id=False, pm_id=False, url_doi_new=False, url_doi_old=False, url_doi_lp=False, url_pm=False, url_pmc=False, url_unpaywall=False, is_valid=False):
         """Init Doi."""
         self.doi = doi
-        self.import_id = import_id
         self.date_published = date_published
+        self.import_id = import_id
         self.pmc_id = pmc_id
         self.pm_id = pm_id
         self.url_doi_new = url_doi_new

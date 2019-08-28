@@ -55,18 +55,24 @@ def init_import_dois_from_csv(filename):
 
     try:
         filename = '{0}/{1}'.format(BASE_DIR, filename)
+        print('Filename:', filename)
         df = pd.read_csv(filename, encoding='utf8')
         df = df.drop_duplicates(subset='doi')
         data = df.to_json(orient='records')
+    except:
+        print('ERROR: CSV file {0} can not be opened or transformed.'.format(filename))
+        return False
+
+    try:
         db_imp = Import('<Init '+filename+'>', data)
         db.session.add(db_imp)
         db.session.commit()
-        init_store_data(loads(data), db_imp.id)
-        return True
     except:
-        print('Error: CSV file for import not working.')
+        print('ERROR: Import() can not be stored in Database.')
         return False
 
+    init_store_data(loads(data), db_imp.id)
+    return True
 
 def import_dois_from_api(data):
     """Import data coming from the API endpoint.
@@ -91,7 +97,8 @@ def import_dois_from_api(data):
         response = init_store_data(data, imp.id)
         return response
     except:
-        response = 'Error: Data import from API not working'
+        response = 'ERROR: Data import from API not working.'
+        print(response)
         return response
 
 
@@ -153,37 +160,42 @@ def init_store_data(data, import_id):
         # TODO: what if not valid? user does not get it back in the api response.
         if is_valid:
             if entry['doi'] and entry['date']:
-                result_doi = Doi.query.filter_by(doi=entry['doi']).first()
+                doi = entry['doi']
+                result_doi = Doi.query.filter_by(doi=doi).first()
                 if result_doi is None:
-                    doi = entry['doi']
-                    db_doi = Doi(
-                        doi=doi,
-                        import_id=import_id,
-                        date_published=datetime.strptime(entry['date'], '%Y-%m-%d'),
-                        is_valid=True
-                    )
-                    db.session.add(db_doi)
-                    db.session.commit()
-                    dois_added += 1
-                    dois_added_list.append(entry['doi'])
+                    try:
+                        db_doi = Doi(
+                            doi=doi,
+                            date_published=datetime.strptime(entry['date'], '%Y-%m-%d'),
+                            import_id=import_id,
+                            is_valid=True
+                        )
+                        db.session.add(db_doi)
+                        db.session.commit()
+                        dois_added += 1
+                        dois_added_list.append(entry['doi'])
+                    except:
+                        print('ERROR: Can not import Doi {0}.'.format(doi))
                 else:
                     doi = result_doi.doi
             else:
-                print('Entry {0} is not valid'.format(entry))
+                print('WARNING: Entry {0} is not valid'.format(doi))
             # store url
             if entry['url'] and entry['url_type']:
                 url = entry['url']
-                if Url.query.filter_by(url=url).first() is None:
-                    db_url = Url(
-                        url=url,
-                        doi=doi,
-                        url_type=entry['url_type']
-                    )
-                    db.session.add(db_url)
-                    db.session.commit()
-                    urls_added += 1
-                else:
-                    pass
+                result_url = Url.query.filter_by(url=url).first()
+                if result_url is None:
+                    try:
+                        db_url = Url(
+                            url=url,
+                            doi=doi,
+                            url_type=entry['url_type']
+                        )
+                        db.session.add(db_url)
+                        db.session.commit()
+                        urls_added += 1
+                    except:
+                        print('ERROR: Can not import Url {0}.'.format(url))
         else:
             print('WARNING: DOI {} is not valid.'.format(entry['doi']))
 
@@ -209,15 +221,18 @@ def create_doi_new_urls():
         # always overwrite the url at the beginning of each section
         url = 'https://doi.org/{0}'.format(doi_url_encoded)
         if Url.query.filter_by(url=url).first() is None:
-            db_url = Url(
-                url=url,
-                doi=d.doi,
-                url_type='doi_new'
-            )
-            d.url_doi_new = True
-            db.session.add(db_url)
-            db.session.commit()
-            urls_added += 1
+            try:
+                db_url = Url(
+                    url=url,
+                    doi=d.doi,
+                    url_type='doi_new'
+                )
+                d.url_doi_new = True
+                db.session.add(db_url)
+                db.session.commit()
+                urls_added += 1
+            except:
+                print('WARNING: Url {0} can not be created.'.format(url))
 
     print('{0} new doi url\'s added to database.'.format(urls_added))
 
@@ -237,15 +252,18 @@ def create_doi_old_urls():
         doi_url_encoded = urllib.parse.quote(d.doi)
         url = 'http://dx.doi.org/{0}'.format(doi_url_encoded)
         if Url.query.filter_by(url=url).first() is None:
-            db_url = Url(
-                url=url,
-                doi=d.doi,
-                url_type='doi_old'
-            )
-            d.url_doi_old = True
-            db.session.add(db_url)
-            db.session.commit()
-            urls_added += 1
+            try:
+                db_url = Url(
+                    url=url,
+                    doi=d.doi,
+                    url_type='doi_old'
+                )
+                d.url_doi_old = True
+                db.session.add(db_url)
+                db.session.commit()
+                urls_added += 1
+            except:
+                print('WARNING: Url {0} can not be created.'.format(url))
 
     print('{0} old doi url\'s added to database.'.format(urls_added))
 
