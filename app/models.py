@@ -45,21 +45,21 @@ class Doi(db.Model):
     url_pm = db.Column(db.Boolean, nullable=False)
     url_pmc = db.Column(db.Boolean, nullable=False)
     url_unpaywall = db.Column(db.Boolean, nullable=False)
-    is_valid = db.Column(db.Boolean, default=False)
+    is_valid = db.Column(db.Boolean)
 
-    def __init__(self, doi, import_id, date_published, is_valid, pmc_id=None, pm_id=None):
+    def __init__(self, doi, date_published, import_id, pmc_id=False, pm_id=False, url_doi_new=False, url_doi_old=False, url_doi_lp=False, url_pm=False, url_pmc=False, url_unpaywall=False, is_valid=False):
         """Init Doi."""
         self.doi = doi
-        self.import_id = import_id
         self.date_published = date_published
+        self.import_id = import_id
         self.pmc_id = pmc_id
         self.pm_id = pm_id
-        self.url_doi_new = False
-        self.url_doi_old = False
-        self.url_doi_lp = False
-        self.url_pm = False
-        self.url_pmc = False
-        self.url_unpaywall = False
+        self.url_doi_new = url_doi_new
+        self.url_doi_old = url_doi_old
+        self.url_doi_lp = url_doi_lp
+        self.url_pm = url_pm
+        self.url_pmc = url_pmc
+        self.url_unpaywall = url_unpaywall
         self.is_valid = is_valid
 
     def __repr__(self):

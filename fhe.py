@@ -12,7 +12,7 @@ app.app_context().push()
 
 @app.cli.command()
 @click.argument('filename', type=click.Path(exists=True), required=False)
-def import_data(filename=None):
+def init_data(filename=None):
     """Import raw data from csv file.
 
     The filepath can be manually passed with the argument `filename`.
@@ -24,20 +24,21 @@ def import_data(filename=None):
         argument via the command line. Relative to root.
 
     """
-    from app import import_dois_from_csv
+    from app import init_import_dois_from_csv
 
     if not filename:
         filename = app.config['CSV_FILENAME']
-    import_dois_from_csv(filename)
+    init_import_dois_from_csv(filename)
 
 
 @app.cli.command()
-def delete_import():
+def delete_init():
     """Create the doi Url's."""
     from app import delete_dois
     from app import delete_urls
     delete_urls()
     delete_dois()
+
 
 @app.cli.command()
 def create_doi_urls():
@@ -84,6 +85,15 @@ def create_unpaywall_urls():
 
 
 @app.cli.command()
+def create_urls():
+    """Create the Unpaywall Url's."""
+    create_doi_old_urls()
+    create_doi_new_urls()
+    create_ncbi_urls()
+    create_unpaywall_urls()
+
+
+@app.cli.command()
 def create_fbrequests():
     """Create the Facebook request."""
     from app import fb_requests
@@ -125,14 +135,16 @@ def delete_data():
     from app import delete_dois
     from app import delete_urls
     from app import delete_apirequests
+    from app import delete_fbrequests
+    delete_fbrequests()
     delete_apirequests()
     delete_urls()
     delete_dois()
 
 
 @app.cli.command()
-@click.argument('table_names')
-def export_tables(table_names):
+@click.argument('table_names', required=False)
+def export_data(table_names):
     """Export tables passed as string, seperated by comma.
 
     Parameters
@@ -143,16 +155,23 @@ def export_tables(table_names):
     """
     from app import export_tables_to_csv
 
+    if not table_names:
+        table_names = 'doi,url,api_request,fb_request'
+
     table_names = table_names.split(',')
     export_tables_to_csv(table_names, app.config['SQLALCHEMY_DATABASE_URI'])
 
 
 @app.cli.command()
-@click.argument('table_names')
-def import_tables(table_names):
+@click.argument('table_names', required=False)
+def import_data(table_names, delete_tables=False):
     """Import data.
 
-    The table_names will be sorted, from doi -> url -> fb_request.
+    table_names must be passed in the right order.
+    e.g. 'doi,url,api_request,fb_request'
+
+    Files must be available as:
+        fb_request.csv, api_request.csv, doi.csv, url.csv
 
     Parameters
     ----------
@@ -160,38 +179,15 @@ def import_tables(table_names):
         String with table names, seperated by comma.
 
     """
-    from app import delete_dois
-    from app import delete_fbrequests
-    from app import delete_urls
-    from app import import_tables_from_csv
+    from app import import_csv
 
-    table_names_tmp = [table_name.strip() for table_name in
-                       table_names.split(',')]
-    table_names = []
-    if 'doi' in table_names_tmp:
-        table_names.append('doi')
-    if 'url' in table_names_tmp:
-        table_names.append('url')
-    if 'fb_request' in table_names_tmp:
-        table_names.append('fb_request')
+    if not table_names or table_names == '':
+        table_names = ['doi', 'url', 'api_request', 'fb_request']
+    else:
+        table_names_tmp = [table_name.strip() for table_name in table_names.split(',')]
+        table_names = table_names_tmp
 
-    for table_name in reversed(table_names):
-        if table_name == 'doi':
-            try:
-                delete_dois()
-            except:
-                raise
-        if table_name == 'url':
-            try:
-                delete_urls()
-            except:
-                raise
-        if table_name == 'fb_request':
-            try:
-                delete_fbrequests()
-            except:
-                raise
-    import_tables_from_csv(table_names, app.config['SQLALCHEMY_DATABASE_URI'])
+    import_csv(table_names, delete_tables)
 
 
 @app.route('/')
