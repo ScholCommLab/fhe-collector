@@ -12,13 +12,13 @@ class TestConfiguration:
         """
 
         os.environ['ENV'] = 'development'
-
         app = create_app()
-        assert app.config['TESTING'] == False
+
+        assert app.config['TESTING'] is False
         assert app.config['DEBUG'] is True
         assert app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] is False
         assert app.config['USER_SETTINGS_EXIST'] is True
-        assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] == False
+        assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False
 
     def test_create_app_testing(self):
         """
@@ -28,14 +28,12 @@ class TestConfiguration:
         os.environ['ENV'] = 'testing'
         if 'SQLALCHEMY_DATABASE_URI' in os.environ:
             del os.environ['SQLALCHEMY_DATABASE_URI']
-
         app = create_app()
-        assert app.config['TESTING'] == True
+
+        assert app.config['TESTING'] is True
         assert app.config['DEBUG'] is False
-        assert app.config['SQLALCHEMY_ECHO'] == True
-        if 'TRAVIS' not in os.environ:
-            assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///:memory:'
-        assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] == False
+        assert app.config['SQLALCHEMY_ECHO'] is True
+        assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False
 
     def test_create_app_production(self):
         """
@@ -45,6 +43,6 @@ class TestConfiguration:
         app = create_app()
 
         assert app.config['USER_SETTINGS_EXIST'] is True
-        assert app.config['TESTING'] == False
+        assert app.config['TESTING'] is False
         assert app.config['DEBUG'] is False
-        assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] == False
+        assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False
