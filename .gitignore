@@ -33,3 +33,7 @@ migrations/README
 migrations/env.py
 migrations/alembic.ini
 stash*.*
+.tox/
+coverage.xml
+core
+docs/coverage_html

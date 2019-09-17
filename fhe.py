@@ -24,11 +24,11 @@ def init_data(filename=None):
         argument via the command line. Relative to root.
 
     """
-    from app import init_import_dois_from_csv
+    from app import init_from_csv
 
     if not filename:
         filename = app.config['CSV_FILENAME']
-    init_import_dois_from_csv(filename)
+    init_from_csv(filename, app.config['URL_BATCH_SIZE'])
 
 
 @app.cli.command()
@@ -41,26 +41,38 @@ def delete_init():
 
 
 @app.cli.command()
+def reset_init():
+    """Reset the doi Url's."""
+    from app import delete_dois
+    from app import delete_urls
+    from app import init_from_csv
+
+    delete_urls()
+    delete_dois()
+    init_from_csv(app.config['CSV_FILENAME'], app.config['URL_BATCH_SIZE'])
+
+
+@app.cli.command()
 def create_doi_urls():
     """Create the doi Url's."""
     from app import create_doi_old_urls
     from app import create_doi_new_urls
-    create_doi_old_urls()
-    create_doi_new_urls()
+    create_doi_old_urls(app.config['URL_BATCH_SIZE'])
+    create_doi_new_urls(app.config['URL_BATCH_SIZE'])
 
 
 @app.cli.command()
 def create_doi_new_urls():
     """Create the doi Url's."""
     from app import create_doi_new_urls
-    create_doi_new_urls()
+    create_doi_new_urls(app.config['URL_BATCH_SIZE'])
 
 
 @app.cli.command()
 def create_doi_old_urls():
     """Create the doi Url's."""
     from app import create_doi_old_urls
-    create_doi_old_urls()
+    create_doi_old_urls(app.config['URL_BATCH_SIZE'])
 
 
 @app.cli.command()
@@ -82,15 +94,6 @@ def create_unpaywall_urls():
     """Create the Unpaywall Url's."""
     from app import create_unpaywall_urls
     create_unpaywall_urls(app.config['APP_EMAIL'])
-
-
-@app.cli.command()
-def create_urls():
-    """Create the Unpaywall Url's."""
-    create_doi_old_urls()
-    create_doi_new_urls()
-    create_ncbi_urls()
-    create_unpaywall_urls()
 
 
 @app.cli.command()
@@ -143,8 +146,28 @@ def delete_data():
 
 
 @app.cli.command()
+def reset_data():
+    """Create the doi Url's."""
+    from app import create_doi_new_urls
+    from app import create_doi_old_urls
+    from app import delete_dois
+    from app import delete_urls
+    from app import delete_apirequests
+    from app import delete_fbrequests
+    from app import init_from_csv
+
+    delete_fbrequests()
+    delete_apirequests()
+    delete_urls()
+    delete_dois()
+    init_from_csv(app.config['CSV_FILENAME'], app.config['URL_BATCH_SIZE'])
+    create_doi_old_urls(app.config['URL_BATCH_SIZE'])
+    create_doi_new_urls(app.config['URL_BATCH_SIZE'])
+
+
+@app.cli.command()
 @click.argument('table_names', required=False)
-def export_data(table_names):
+def export_tables(table_names):
     """Export tables passed as string, seperated by comma.
 
     Parameters
@@ -164,7 +187,7 @@ def export_data(table_names):
 
 @app.cli.command()
 @click.argument('table_names', required=False)
-def import_data(table_names, delete_tables=False):
+def import_tables(table_names, delete_tables=False):
     """Import data.
 
     table_names must be passed in the right order.
@@ -269,3 +292,10 @@ def add_data():
         return jsonify({'status': response_status, 'content': response})
     else:
         return jsonify({'status': 'on', 'api_version': '1.0'})
+
+
+@app.shell_context_processor
+def make_shell_context():
+    from app import db
+    from app.models import Doi, Url
+    return {'db': db, 'Doi': Doi, 'Url': Url}
