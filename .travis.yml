@@ -17,8 +17,6 @@ matrix:
     - python: 3.7
       env: TOXENV=py37
     - python: 3.6
-      env: TOXENV=docs
-    - python: 3.6
       env: TOXENV=coverage
     - python: 3.6
       env: TOXENV=coveralls
@@ -51,7 +49,6 @@ before_script:
   - export FLASK_DEBUG=1
 
 script:
-  # - pytest --doctest-modules --cov=app --cov-report term-missing tests/
   - tox
 
 after_success:
