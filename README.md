@@ -134,11 +134,25 @@ flask COMMAND <OPTIONAL>
 ```
 
 Commands offered:
-* `import_from_csv`
+
+* `init_data`
+* `delete_init`
+* `reset_init`
+* `delete_dois`
 * `create_doi_urls`
-* `delete_all_dois`
-* `delete_all_urls`
-* `fb_requests`
+* `create_doi_new_urls`
+* `create_doi_old_urls`
+* `create_doi_lp_urls`
+* `create_ncbi_urls`
+* `create_unpaywall_urls`
+* `delete_urls`
+* `delete_apirequests`
+* `create_fbrequests`
+* `delete_fbrequests`
+* `delete_data`
+* `reset_data`
+* `export_tables`
+* `import_tables`
 
 For more details on each command, look inside the code documentation.
 
@@ -165,12 +179,15 @@ If you set the database URI as an environment variable and you don't want to use
 ```
 unset SQLALCHEMY_DATABASE_URI
 ```
-**pytest**
 
-To execute the tests with pytest (as recommended), simply type:
+**tox**
+
+To execute the tests with tox (as recommended), simply type:
 ```
-pytest
+tox
 ```
+
+You can find out more about the tox configuration inside `tox.ini` and in its [documentation](https://tox.readthedocs.io).
 
 **Coverage**
 
