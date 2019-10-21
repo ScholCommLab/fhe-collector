@@ -1,3 +1,11 @@
 tox
 flask-migrate
 alembic
+flask
+flask_sqlalchemy
+psycopg2==2.7.5
+click
+pandas==0.21.0
+tqdm
+Flask-DebugToolbar==0.10.1
+facebook-sdk
