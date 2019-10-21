@@ -20,6 +20,7 @@ class Development(Config):
     DEBUG = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     USER_SETTINGS_EXIST = True
+
     if 'SQLALCHEMY_DATABASE_URI' in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
     else:
@@ -34,7 +35,7 @@ class Testing(Config):
     SQLALCHEMY_ECHO = True
     # only execute if code is running on travis
     if 'TRAVIS' in os.environ:
-
+        NCBI_TOOL = os.getenv('NCBI_TOOL')
         if 'SECRET_KEY' in os.environ:
             SECRET_KEY = os.getenv('SECRET_KEY')
         else:

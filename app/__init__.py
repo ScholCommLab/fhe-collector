@@ -946,27 +946,27 @@ def create_app():
     ENVIRONMENT = os.getenv('ENV', default='development')
     # TESTING = os.getenv('TESTING', default=False)
     print('* Updating App Mode to: ' + ENVIRONMENT)
-    travis = os.getenv('TRAVIS', default=False)
-    if not travis:
+    is_travis = os.getenv('TRAVIS', default=False)
+    if not is_travis:
         print('* Loading User Settings.')
         app.config.from_pyfile(BASE_DIR+'/settings_user.py', silent=True)
     if ENVIRONMENT == 'development':
         print('* Loading Development Settings.')
         app.config.from_pyfile(BASE_DIR+'/settings_development.py', silent=True)
         app.config.from_object('settings_default.Development')
-        if not travis:
+        if not is_travis:
             DebugToolbarExtension(app)
     elif ENVIRONMENT == 'production':
         print('* Loading Production Settings.')
         # order of settings loading: 1. settings file, 2. environment variable DATABASE_URL, 3. environment variable SQLALCHEMY_DATABASE_URI
-        if not travis:
+        if not is_travis:
             app.config.from_pyfile(BASE_DIR+'/settings_production.py', silent=True)
         app.config.from_object('settings_default.Production')
     elif ENVIRONMENT == 'testing':
         print('* Loading Test Settings.')
         app.config['TESTING'] = True
         app.config.from_object('settings_default.Testing')
-    if not travis:
+    if not is_travis:
         print('* Database: ' + app.config['SQLALCHEMY_DATABASE_URI'])
     db.init_app(app)
     migrate.init_app(app, db)
