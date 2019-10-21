@@ -58,7 +58,7 @@ INSTALL_REQUIREMENTS = [
     'flask_migrate',
     'psycopg2==2.7.5',
     'click',
-    'pandas==0.22.0',
+    'pandas==0.25.2',
     'tqdm',
     'Flask-DebugToolbar==0.10.1',
     'facebook-sdk'
