@@ -25,7 +25,11 @@ import pandas as pd
 from psycopg2 import connect
 import re
 import requests
-import urllib.parse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+# import urllib.parse
 from tqdm import tqdm
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -343,7 +347,7 @@ def create_doi_new_urls(batch_size):
     result_join = db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_doi_new == False).all()
     for i in range(0, len(result_join), batch_size):
         for d in result_join[i:i+batch_size]:
-            doi_url_encoded = urllib.parse.quote(d.doi)
+            doi_url_encoded = urlparse.quote(d.doi)
             url = 'https://doi.org/{0}'.format(doi_url_encoded)
             if url not in db_urls and url not in urls_added:
                 try:
@@ -386,7 +390,7 @@ def create_doi_old_urls(batch_size):
     result_join = db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_doi_old == False).all()
     for i in range(0, len(result_join), batch_size):
         for d in result_join[i:i+batch_size]:
-            doi_url_encoded = urllib.parse.quote(d.doi)
+            doi_url_encoded = urlparse.quote(d.doi)
             url = 'http://dx.doi.org/{0}'.format(doi_url_encoded)
             if url not in db_urls and url not in urls_added:
                 try:
@@ -429,7 +433,7 @@ def create_doi_lp_urls():
     # create doi landing page url
     result_join = db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_doi_lp == False).all()
     for d in tqdm(result_join):
-        doi_url_encoded = urllib.parse.quote(d.doi)
+        doi_url_encoded = urlparse.quote(d.doi)
         url = 'https://doi.org/{0}'.format(doi_url_encoded)
         resp = request_doi_landingpage_api(url)
         resp_url = resp.url
@@ -495,7 +499,7 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
     for d in tqdm(result_join):
         # TODO: allows up to 200 ids sent at the same time
         # send request to NCBI API
-        doi_url_encoded = urllib.parse.quote(d.doi)
+        doi_url_encoded = urlparse.quote(d.doi)
         url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
         resp_data = request_ncbi_api(url, ncbi_tool, ncbi_email, d.doi)
         db_ncbi = APIRequest(
@@ -582,7 +586,7 @@ def create_unpaywall_urls(email):
     for d in tqdm(result_join):
         # send request to Unpaywall API
         url_dict = {}
-        doi_url_encoded = urllib.parse.quote(d.doi)
+        doi_url_encoded = urlparse.quote(d.doi)
         url = 'https://api.unpaywall.org/v2/{0}?email={1}'.format(doi_url_encoded, email)
         resp_data = request_unpaywall_api(url)
         db_api = APIRequest(
