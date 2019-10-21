@@ -58,7 +58,7 @@ INSTALL_REQUIREMENTS = [
     'flask_migrate',
     'psycopg2==2.7.5',
     'click',
-    'pandas==0.21.0',
+    'pandas==0.22.0',
     'tqdm',
     'Flask-DebugToolbar==0.10.1',
     'facebook-sdk'
@@ -81,7 +81,6 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
