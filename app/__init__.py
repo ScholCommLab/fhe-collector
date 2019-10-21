@@ -29,7 +29,6 @@ try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
-# import urllib.parse
 from tqdm import tqdm
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
