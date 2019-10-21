@@ -36,6 +36,9 @@ class Testing(Config):
     # only execute if code is running on travis
     if 'TRAVIS' in os.environ:
         NCBI_TOOL = os.getenv('NCBI_TOOL')
+        APP_EMAIL = os.getenv('APP_EMAIL')
+        FB_APP_ID = os.getenv('FB_APP_ID')
+        FB_APP_SECRET = os.getenv('FB_APP_SECRET')
         if 'SECRET_KEY' in os.environ:
             SECRET_KEY = os.getenv('SECRET_KEY')
         else:
