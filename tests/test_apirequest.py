@@ -19,6 +19,7 @@ class TestAPIRequests:
         for entry in data:
             doi_url_encoded = urllib.parse.quote(entry[0])
             url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
+            print(app.config['NCBI_TOOL'])
             resp_data = request_ncbi_api(url, app.config['NCBI_TOOL'], app.config['APP_EMAIL'], entry[0])
             if entry[3] == 'ok':
                 print(resp_data)
