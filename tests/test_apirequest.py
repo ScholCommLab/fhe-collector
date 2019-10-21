@@ -11,16 +11,13 @@ class TestAPIRequests:
         Tests if the app starts correctly.
         """
         from app import request_ncbi_api
-        try:
-            from urllib.parse import urlparse
-        except ImportError:
-            from urlparse import urlparse
+        import urllib.parse
 
         data = import_ncbi
         app = create_app()
 
         for entry in data:
-            doi_url_encoded = urlparse.quote(entry[0])
+            doi_url_encoded = urllib.parse.quote(entry[0])
             url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
             resp_data = request_ncbi_api(url, app.config['NCBI_TOOL'], app.config['APP_EMAIL'], entry[0])
             if entry[3] == 'ok':
@@ -39,15 +36,12 @@ class TestAPIRequests:
         Tests if doi landingpage request works.
         """
         from app import request_doi_landingpage_api
-        try:
-            from urllib.parse import urlparse
-        except ImportError:
-            from urlparse import urlparse
+        import urllib.parse
 
         data = import_doi_landingpage
 
         for entry in data:
-            doi_url_encoded = urlparse.quote(entry[0])
+            doi_url_encoded = urllib.parse.quote(entry[0])
             url = 'https://doi.org/{0}'.format(doi_url_encoded)
             resp = request_doi_landingpage_api(url)
             resp_url = resp.url

@@ -345,7 +345,7 @@ def create_doi_new_urls(batch_size):
     # get doi, url_doi_new=False and url
     result_join = db.session.query(Doi).join(Url).filter(Doi.doi == Url.doi).filter(Doi.url_doi_new == False).all()
     for i in range(0, len(result_join), batch_size):
-        for d in result_join[i:i+batch_size]:
+        for d in result_join[i:i + batch_size]:
             doi_url_encoded = urlparse.quote(d.doi)
             url = 'https://doi.org/{0}'.format(doi_url_encoded)
             if url not in db_urls and url not in urls_added:
