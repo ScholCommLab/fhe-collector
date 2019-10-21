@@ -221,10 +221,7 @@ pytest tests/ --doctest-modules -v --cov coveralls --cov-report term-missing
 Use Sphinx to create class and function documentation out of the doc-strings.
 
 ```
-cd docs/
-sphinx-build -b html source build
-sphinx-apidoc -f -o source ..
-make html
+tox -e docs
 ```
 
 ## Production
