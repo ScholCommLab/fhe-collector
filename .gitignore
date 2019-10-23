@@ -37,3 +37,4 @@ stash*.*
 coverage.xml
 core
 docs/coverage_html
+.python-version
