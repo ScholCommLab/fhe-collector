@@ -33,7 +33,6 @@ from tqdm import tqdm
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_debugtoolbar import DebugToolbarExtension
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -955,6 +954,7 @@ def create_app():
         app.config.from_pyfile(BASE_DIR+'/settings_development.py', silent=True)
         app.config.from_object('settings_default.Development')
         if not is_travis:
+            from flask_debugtoolbar import DebugToolbarExtension
             DebugToolbarExtension(app)
     elif ENVIRONMENT == 'production':
         print('* Loading Production Settings.')
