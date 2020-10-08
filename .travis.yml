@@ -1,6 +1,6 @@
-language: python
-cache: pip
-dist: xenial
+language:        python
+cache:           pip
+dist:            xenial
 
 sudo: false
 
@@ -39,9 +39,10 @@ install:
   - pip --version
   - tox --version
   - "pip install -r requirements.txt"
+  - "pip install -r deps/tests-requirements.txt"
 
 before_script:
-  - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe.py"
+  - export FLASK_APP="$TRAVIS_BUILD_DIR/main.py"
   - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
   - export FLASK_DEBUG=1
 

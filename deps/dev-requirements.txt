@@ -1,0 +1,5 @@
+# Requirements for development.
+tox
+wheel
+pre-commit
+Flask-DebugToolbar==0.10.1
