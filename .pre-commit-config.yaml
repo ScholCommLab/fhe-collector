@@ -3,7 +3,7 @@ default_language_version:
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.4.0
-    exclude: _pytest/(debugging|hookspec).py
+    exclude: _pytest/(debugging|hookspec).py|migrations/
     hooks:
     -   id: check-added-large-files
     -   id: check-case-conflict
@@ -18,11 +18,13 @@ repos:
         args: [--autofix,--no-sort-keys]
 -   repo: https://github.com/psf/black
     rev: 19.10b0
+    exclude: ^migrations/
     hooks:
     -   id: black
         language_version: python3.6
 -   repo: https://github.com/asottile/blacken-docs
     rev: v1.7.0
+    exclude: migrations/
     hooks:
     -   id: blacken-docs
         additional_dependencies: [black==19.10b0]
