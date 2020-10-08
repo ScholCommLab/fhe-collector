@@ -18,19 +18,23 @@ class TestAPIRequests:
 
         for entry in data:
             doi_url_encoded = urllib.parse.quote(entry[0])
-            url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}'.format(doi_url_encoded)
-            print(app.config['NCBI_TOOL'])
-            resp_data = request_ncbi_api(url, app.config['NCBI_TOOL'], app.config['APP_EMAIL'], entry[0])
-            if entry[3] == 'ok':
+            url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}".format(
+                doi_url_encoded
+            )
+            print(app.config["NCBI_TOOL"])
+            resp_data = request_ncbi_api(
+                url, app.config["NCBI_TOOL"], app.config["APP_EMAIL"], entry[0]
+            )
+            if entry[3] == "ok":
                 print(resp_data)
-                assert resp_data['status'] == 'ok'
-                assert resp_data['records'][0]['doi'] == entry[0]
-                assert resp_data['records'][0]['pmid'] == entry[1]
-                assert resp_data['records'][0]['pmcid'] == entry[2]
+                assert resp_data["status"] == "ok"
+                assert resp_data["records"][0]["doi"] == entry[0]
+                assert resp_data["records"][0]["pmid"] == entry[1]
+                assert resp_data["records"][0]["pmcid"] == entry[2]
             else:
-                assert resp_data['status'] == 'ok'
-                assert resp_data['records'][0]['doi'] == entry[0]
-                assert resp_data['records'][0]['status'] == entry[3]
+                assert resp_data["status"] == "ok"
+                assert resp_data["records"][0]["doi"] == entry[0]
+                assert resp_data["records"][0]["status"] == entry[3]
 
     def test_doi_lp_request(self, import_doi_landingpage):
         """
@@ -43,7 +47,7 @@ class TestAPIRequests:
 
         for entry in data:
             doi_url_encoded = urllib.parse.quote(entry[0])
-            url = 'https://doi.org/{0}'.format(doi_url_encoded)
+            url = "https://doi.org/{0}".format(doi_url_encoded)
             resp = request_doi_landingpage_api(url)
             resp_url = resp.url
             if resp.url:

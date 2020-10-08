@@ -22,7 +22,7 @@ class Import(db.Model):
 
     def __repr__(self):
         """Repr."""
-        return '<Import {}>'.format(self.id)
+        return "<Import {}>".format(self.id)
 
 
 class Doi(db.Model):
@@ -37,7 +37,7 @@ class Doi(db.Model):
     doi = db.Column(db.String(64), primary_key=True, nullable=False)
     pmc_id = db.Column(db.String(256))
     pm_id = db.Column(db.String(256))
-    import_id = db.Column(db.Integer, db.ForeignKey('import.id'), nullable=False)
+    import_id = db.Column(db.Integer, db.ForeignKey("import.id"), nullable=False)
     date_published = db.Column(db.DateTime())
     url_doi_new = db.Column(db.Boolean, nullable=False)
     url_doi_old = db.Column(db.Boolean, nullable=False)
@@ -47,7 +47,21 @@ class Doi(db.Model):
     url_unpaywall = db.Column(db.Boolean, nullable=False)
     is_valid = db.Column(db.Boolean)
 
-    def __init__(self, doi, date_published, import_id, pmc_id=False, pm_id=False, url_doi_new=False, url_doi_old=False, url_doi_lp=False, url_pm=False, url_pmc=False, url_unpaywall=False, is_valid=False):
+    def __init__(
+        self,
+        doi,
+        date_published,
+        import_id,
+        pmc_id=False,
+        pm_id=False,
+        url_doi_new=False,
+        url_doi_old=False,
+        url_doi_lp=False,
+        url_pm=False,
+        url_pmc=False,
+        url_unpaywall=False,
+        is_valid=False,
+    ):
         """Init Doi."""
         self.doi = doi
         self.date_published = date_published
@@ -64,7 +78,7 @@ class Doi(db.Model):
 
     def __repr__(self):
         """Repr."""
-        return '<DOI {}>'.format(self.doi)
+        return "<DOI {}>".format(self.doi)
 
 
 class Url(db.Model):
@@ -75,7 +89,7 @@ class Url(db.Model):
     """
 
     url = db.Column(db.String(512), primary_key=True)
-    doi = db.Column(db.String(64), db.ForeignKey('doi.doi'), nullable=False)
+    doi = db.Column(db.String(64), db.ForeignKey("doi.doi"), nullable=False)
     url_type = db.Column(db.String(32))
     date_added = db.Column(db.DateTime(), nullable=False)
 
@@ -91,20 +105,22 @@ class Url(db.Model):
 
     def __repr__(self):
         """Repr."""
-        return '<URL {}>'.format(self.url)
+        return "<URL {}>".format(self.url)
 
 
 class APIRequest(db.Model):
     """NCBIRequest model."""
 
     id = db.Column(db.Integer, primary_key=True)
-    doi = db.Column(db.String(64), db.ForeignKey('doi.doi'), nullable=False)
+    doi = db.Column(db.String(64), db.ForeignKey("doi.doi"), nullable=False)
     request_url = db.Column(db.String(512))
     request_type = db.Column(db.String(32))
     response_content = db.Column(db.Text())
     response_status = db.Column(db.String(32))
 
-    def __init__(self, doi, request_url, request_type, response_content, response_status):
+    def __init__(
+        self, doi, request_url, request_type, response_content, response_status
+    ):
         """Init APIRequest."""
         self.doi = doi
         self.request_url = request_url
@@ -121,8 +137,7 @@ class FBRequest(db.Model):
     """FBRequest model."""
 
     id = db.Column(db.Integer, primary_key=True)
-    url_url = db.Column(db.String(512), db.ForeignKey('url.url'),
-                        nullable=False)
+    url_url = db.Column(db.String(512), db.ForeignKey("url.url"), nullable=False)
     response = db.Column(db.Text())
     reactions = db.Column(db.Integer)
     shares = db.Column(db.Integer)
@@ -134,12 +149,12 @@ class FBRequest(db.Model):
         """Init FBRequest."""
         self.url_url = url
         self.response = json.dumps(response)
-        self.reactions = response['engagement']['reaction_count'],
-        self.shares = response['engagement']['share_count'],
-        self.comments = response['engagement']['comment_count'],
-        self.plugin_comments = response['engagement']['comment_plugin_count']
+        self.reactions = (response["engagement"]["reaction_count"],)
+        self.shares = (response["engagement"]["share_count"],)
+        self.comments = (response["engagement"]["comment_count"],)
+        self.plugin_comments = response["engagement"]["comment_plugin_count"]
         self.timestamp = datetime.now()
 
     def __repr__(self):
         """Repr."""
-        return '<Facebook Request {}>'.format(self.request)
+        return "<Facebook Request {}>".format(self.request)
