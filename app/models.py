@@ -1,3 +1,6 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""ORM Models."""
 from app import db
 from datetime import datetime
 import json
@@ -10,7 +13,8 @@ class Import(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    imported_at = db.Column(db.DateTime(), nullable=False)
+    import_start = db.Column(db.DateTime(), nullable=False)
+    import_end = db.Column(db.DateTime(), nullable=True)
     source = db.Column(db.String(512), nullable=False)
     raw = db.Column(db.Text())
 
@@ -18,7 +22,7 @@ class Import(db.Model):
         """Init Import."""
         self.source = source
         self.raw = raw
-        self.imported_at = datetime.now()
+        self.import_start = datetime.now()
 
     def __repr__(self):
         """Repr."""
@@ -108,7 +112,7 @@ class Url(db.Model):
         return "<URL {}>".format(self.url)
 
 
-class APIRequest(db.Model):
+class Request(db.Model):
     """NCBIRequest model."""
 
     id = db.Column(db.Integer, primary_key=True)

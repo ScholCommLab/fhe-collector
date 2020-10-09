@@ -22,6 +22,7 @@ class Development(Config):
     DEBUG = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     USER_SETTINGS_EXIST = True
+    FLASK_ENV = "development"
 
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
@@ -29,15 +30,15 @@ class Development(Config):
         SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "app.db")
 
 
-class Testing(Config):
+class Travis(Config):
     """
     Setting the test environment settings.
     """
 
-    TESTING = True
     SQLALCHEMY_ECHO = True
     # only execute if code is running on travis
     if "TRAVIS" in os.environ:
+        TRAVIS = True
         NCBI_TOOL = os.getenv("NCBI_TOOL")
         APP_EMAIL = os.getenv("APP_EMAIL")
         FB_APP_ID = os.getenv("FB_APP_ID")
@@ -58,6 +59,8 @@ class Production(Config):
     """
 
     USER_SETTINGS_EXIST = True
+    FLASK_ENV = "production"
+    # TODO: FLASK_ENV environment variable setzen! oder automatisch via ENVIRONMENT ableiten
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
     else:

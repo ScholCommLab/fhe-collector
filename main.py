@@ -1,9 +1,34 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""Find out more at https://github.com/ScholCommLab/fhe-collector.
+
+Copyright 2018 Stefan Kasberger
+
+Licensed under the MIT License.
+"""
 import click
 from flask import jsonify
 from flask import render_template
 from flask import request
 from app import create_app
-from app import import_dois_from_api
+from app.database import (
+    import_init_csv,
+    delete_urls,
+    delete_dois,
+    create_doi_old_urls,
+    create_doi_new_urls,
+    create_doi_lp_urls,
+)
+
+# from app.db import create_unpaywall_urls, create_doi_lp_urls, create_doi_new_urls, create_doi_old_urls, create_ncbi_urls, delete_urls, delete_requests, delete_fbrequests, delete_dois, import_dois_from_api, init_from_csv, export_tables_to_csv, import_csv
+# from app.requests import requests, fb_requests
+
+__author__ = "Stefan Kasberger"
+__email__ = "mail@stefankasberger.at"
+__copyright__ = "Copyright (c) 2018 Stefan Kasberger"
+__license__ = "MIT License"
+__version__ = "0.1.0"
+__url__ = "https://github.com/ScholCommLab/fhe-collector"
 
 
 app = create_app()
@@ -20,94 +45,75 @@ def init_data(filename=None):
     Parameters
     ----------
     filename : string
-        Filepath to the csv file. Defaults to None, if not passed as an
+        Relative filepath to the csv file. Defaults to None, if not passed as an
         argument via the command line. Relative to root.
 
     """
-    from app import init_from_csv
-
     if not filename:
         filename = app.config["CSV_FILENAME"]
-    init_from_csv(filename, app.config["URL_BATCH_SIZE"])
+    batch_size = app.config["URL_BATCH_SIZE"]
+    import_init_csv(filename, batch_size)
 
 
 @app.cli.command()
-def delete_init():
-    """Create the doi Url's."""
-    from app import delete_dois
-    from app import delete_urls
-
+def del_init():
+    """Delete initialized data (DOI's and URL's)."""
     delete_urls()
     delete_dois()
 
 
 @app.cli.command()
-def reset_init():
-    """Reset the doi Url's."""
-    from app import delete_dois
-    from app import delete_urls
-    from app import init_from_csv
-
+@click.argument("filename", type=click.Path(exists=True), required=False)
+def res_init(filename=None):
+    """Reset initialized data (DOI's and URL's)."""
     delete_urls()
     delete_dois()
-    init_from_csv(app.config["CSV_FILENAME"], app.config["URL_BATCH_SIZE"])
+    if not filename:
+        filename = app.config["CSV_FILENAME"]
+    batch_size = app.config["URL_BATCH_SIZE"]
+    import_init_csv(filename, batch_size)
 
 
 @app.cli.command()
-def create_doi_urls():
-    """Create the doi Url's."""
-    from app import create_doi_old_urls
-    from app import create_doi_new_urls
-
+def doi_urls():
+    """Create the doi URL's."""
     create_doi_old_urls(app.config["URL_BATCH_SIZE"])
     create_doi_new_urls(app.config["URL_BATCH_SIZE"])
 
 
 @app.cli.command()
-def create_doi_new_urls():
-    """Create the doi Url's."""
-    from app import create_doi_new_urls
-
+def doi_new_urls():
+    """Create the new doi URL's."""
     create_doi_new_urls(app.config["URL_BATCH_SIZE"])
 
 
 @app.cli.command()
-def create_doi_old_urls():
-    """Create the doi Url's."""
-    from app import create_doi_old_urls
-
+def doi_old_urls():
+    """Create the old doi URL's."""
     create_doi_old_urls(app.config["URL_BATCH_SIZE"])
 
 
 @app.cli.command()
-def create_doi_lp_urls():
-    """Create the doi Url's."""
-    from app import create_doi_lp_urls
-
+def doi_lp_urls():
+    """Create the doi landing page URL's."""
     create_doi_lp_urls()
 
 
 @app.cli.command()
-def create_ncbi_urls():
-    """Create the NCBI Url's."""
-    from app import create_ncbi_urls
-
+def ncbi_urls():
+    """Create the NCBI URL's."""
     create_ncbi_urls(app.config["NCBI_TOOL"], app.config["APP_EMAIL"])
 
 
 @app.cli.command()
-def create_unpaywall_urls():
-    """Create the Unpaywall Url's."""
-    from app import create_unpaywall_urls
-
+def unpaywall_urls():
+    """Create the Unpaywall URL's."""
     create_unpaywall_urls(app.config["APP_EMAIL"])
 
 
 @app.cli.command()
-def create_fbrequests():
+def fbrequests():
     """Create the Facebook request."""
-    from app import fb_requests
-
     fb_requests(
         app.config["FB_APP_ID"],
         app.config["FB_APP_SECRET"],
@@ -116,64 +122,43 @@ def create_fbrequests():
 
 
 @app.cli.command()
-def delete_dois():
-    """Delete all entries in doi table."""
-    from app import delete_dois
-
+def del_dois():
+    """Delete all entries in Doi table."""
     delete_dois()
 
 
 @app.cli.command()
-def delete_urls():
-    """Delete all entries in url table."""
-    from app import delete_urls
-
+def del_urls():
+    """Delete all entries in Url table."""
     delete_urls()
 
 
 @app.cli.command()
-def delete_apirequests():
-    """Delete all entries in url table."""
-    from app import delete_apirequests
-
-    delete_apirequests()
+def del_requests():
+    """Delete all entries in Requests table."""
+    delete_requests()
 
 
 @app.cli.command()
-def delete_fbrequests():
-    """Delete all entries in fbrequests table."""
-    from app import delete_fbrequests
-
+def del_fbrequests():
+    """Delete all entries in FBRequests table."""
     delete_fbrequests()
 
 
 @app.cli.command()
-def delete_data():
-    """Create the doi Url's."""
-    from app import delete_dois
-    from app import delete_urls
-    from app import delete_apirequests
-    from app import delete_fbrequests
-
+def del_all_data():
+    """Delete all entries in all tables."""
     delete_fbrequests()
-    delete_apirequests()
+    delete_requests()
     delete_urls()
     delete_dois()
 
 
 @app.cli.command()
-def reset_data():
-    """Create the doi Url's."""
-    from app import create_doi_new_urls
-    from app import create_doi_old_urls
-    from app import delete_dois
-    from app import delete_urls
-    from app import delete_apirequests
-    from app import delete_fbrequests
-    from app import init_from_csv
-
+def res_data():
+    """Reset all entries in all tables (delete + init + preprocessing)."""
     delete_fbrequests()
-    delete_apirequests()
+    delete_requests()
     delete_urls()
     delete_dois()
     init_from_csv(app.config["CSV_FILENAME"], app.config["URL_BATCH_SIZE"])
@@ -183,7 +168,7 @@ def reset_data():
 
 @app.cli.command()
 @click.argument("table_names", required=False)
-def export_tables(table_names):
+def exp_tables(table_names):
     """Export tables passed as string, seperated by comma.
 
     Parameters
@@ -192,8 +177,6 @@ def export_tables(table_names):
         String with table names, seperated by comma.
 
     """
-    from app import export_tables_to_csv
-
     if not table_names:
         table_names = "doi,url,api_request,fb_request"
 
@@ -203,7 +186,7 @@ def export_tables(table_names):
 
 @app.cli.command()
 @click.argument("table_names", required=False)
-def import_tables(table_names, delete_tables=False):
+def imp_tables(table_names, delete_tables=False):
     """Import data.
 
     table_names must be passed in the right order.
@@ -218,8 +201,6 @@ def import_tables(table_names, delete_tables=False):
         String with table names, seperated by comma.
 
     """
-    from app import import_csv
-
     if not table_names or table_names == "":
         table_names = ["doi", "url", "api_request", "fb_request"]
     else:
@@ -330,7 +311,4 @@ def add_data():
 
 @app.shell_context_processor
 def make_shell_context():
-    from app import db
-    from app.models import Doi, Url
-
     return {"db": db, "Doi": Doi, "Url": Url}
