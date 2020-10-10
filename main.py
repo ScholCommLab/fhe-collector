@@ -10,14 +10,24 @@ import click
 from flask import jsonify
 from flask import render_template
 from flask import request
-from app import create_app
+from app import create_app, db
+from app.models import Doi, Url
 from app.database import (
     import_init_csv,
-    delete_urls,
-    delete_dois,
     create_doi_old_urls,
     create_doi_new_urls,
     create_doi_lp_urls,
+    create_ncbi_urls,
+    create_unpaywall_urls,
+    get_fb_data,
+    delete_imports,
+    delete_dois,
+    delete_urls,
+    delete_requests,
+    delete_fbrequests,
+    export_tables_to_csv,
+    import_csv_reset,
+    import_csv_append,
 )
 
 # from app.db import create_unpaywall_urls, create_doi_lp_urls, create_doi_new_urls, create_doi_old_urls, create_ncbi_urls, delete_urls, delete_requests, delete_fbrequests, delete_dois, import_dois_from_api, init_from_csv, export_tables_to_csv, import_csv
@@ -37,7 +47,7 @@ app.app_context().push()
 
 @app.cli.command()
 @click.argument("filename", type=click.Path(exists=True), required=False)
-def init_data(filename=None):
+def init(filename=None):
     """Import raw data from csv file.
 
     The filepath can be manually passed with the argument `filename`.
@@ -52,69 +62,47 @@ def init_data(filename=None):
     if not filename:
         filename = app.config["CSV_FILENAME"]
     batch_size = app.config["URL_BATCH_SIZE"]
+    db.drop_all()
+    db.create_all()
     import_init_csv(filename, batch_size)
-
-
-@app.cli.command()
-def del_init():
-    """Delete initialized data (DOI's and URL's)."""
-    delete_urls()
-    delete_dois()
-
-
-@app.cli.command()
-@click.argument("filename", type=click.Path(exists=True), required=False)
-def res_init(filename=None):
-    """Reset initialized data (DOI's and URL's)."""
-    delete_urls()
-    delete_dois()
-    if not filename:
-        filename = app.config["CSV_FILENAME"]
-    batch_size = app.config["URL_BATCH_SIZE"]
-    import_init_csv(filename, batch_size)
-
-
-@app.cli.command()
-def doi_urls():
-    """Create the doi URL's."""
     create_doi_old_urls(app.config["URL_BATCH_SIZE"])
     create_doi_new_urls(app.config["URL_BATCH_SIZE"])
 
 
 @app.cli.command()
-def doi_new_urls():
+def doi_new():
     """Create the new doi URL's."""
     create_doi_new_urls(app.config["URL_BATCH_SIZE"])
 
 
 @app.cli.command()
-def doi_old_urls():
+def doi_old():
     """Create the old doi URL's."""
     create_doi_old_urls(app.config["URL_BATCH_SIZE"])
 
 
 @app.cli.command()
-def doi_lp_urls():
+def doi_lp():
     """Create the doi landing page URL's."""
     create_doi_lp_urls()
 
 
 @app.cli.command()
-def ncbi_urls():
+def ncbi():
     """Create the NCBI URL's."""
     create_ncbi_urls(app.config["NCBI_TOOL"], app.config["APP_EMAIL"])
 
 
 @app.cli.command()
-def unpaywall_urls():
+def unpaywall():
     """Create the Unpaywall URL's."""
     create_unpaywall_urls(app.config["APP_EMAIL"])
 
 
 @app.cli.command()
-def fbrequests():
+def fb():
     """Create the Facebook request."""
-    fb_requests(
+    get_fb_data(
         app.config["FB_APP_ID"],
         app.config["FB_APP_SECRET"],
         app.config["FB_BATCH_SIZE"],
@@ -122,53 +110,15 @@ def fbrequests():
 
 
 @app.cli.command()
-def del_dois():
-    """Delete all entries in Doi table."""
-    delete_dois()
-
-
-@app.cli.command()
-def del_urls():
-    """Delete all entries in Url table."""
-    delete_urls()
-
-
-@app.cli.command()
-def del_requests():
-    """Delete all entries in Requests table."""
-    delete_requests()
-
-
-@app.cli.command()
-def del_fbrequests():
-    """Delete all entries in FBRequests table."""
-    delete_fbrequests()
-
-
-@app.cli.command()
-def del_all_data():
+def res_tables():
     """Delete all entries in all tables."""
-    delete_fbrequests()
-    delete_requests()
-    delete_urls()
-    delete_dois()
-
-
-@app.cli.command()
-def res_data():
-    """Reset all entries in all tables (delete + init + preprocessing)."""
-    delete_fbrequests()
-    delete_requests()
-    delete_urls()
-    delete_dois()
-    init_from_csv(app.config["CSV_FILENAME"], app.config["URL_BATCH_SIZE"])
-    create_doi_old_urls(app.config["URL_BATCH_SIZE"])
-    create_doi_new_urls(app.config["URL_BATCH_SIZE"])
+    db.drop_all()
+    db.create_all()
 
 
 @app.cli.command()
 @click.argument("table_names", required=False)
-def exp_tables(table_names):
+def exp(table_names):
     """Export tables passed as string, seperated by comma.
 
     Parameters
@@ -178,7 +128,7 @@ def exp_tables(table_names):
 
     """
     if not table_names:
-        table_names = "doi,url,api_request,fb_request"
+        table_names = "import,doi,url,request,fb_request"
 
     table_names = table_names.split(",")
     export_tables_to_csv(table_names, app.config["SQLALCHEMY_DATABASE_URI"])
@@ -186,7 +136,8 @@ def exp_tables(table_names):
 
 @app.cli.command()
 @click.argument("table_names", required=False)
-def imp_tables(table_names, delete_tables=False):
+@click.argument("import_type", required=False)
+def imp(table_names=False, import_type="append"):
     """Import data.
 
     table_names must be passed in the right order.
@@ -201,13 +152,18 @@ def imp_tables(table_names, delete_tables=False):
         String with table names, seperated by comma.
 
     """
-    if not table_names or table_names == "":
-        table_names = ["doi", "url", "api_request", "fb_request"]
-    else:
-        table_names_tmp = [table_name.strip() for table_name in table_names.split(",")]
-        table_names = table_names_tmp
-
-    import_csv(table_names, delete_tables)
+    if import_type == "reset":
+        if not table_names or table_names == "":
+            table_names = ["import", "doi", "url", "request", "fb_request"]
+        else:
+            table_names = [table_name.strip() for table_name in table_names.split(",")]
+        import_csv_reset(table_names)
+    elif import_type == "append" or import_type == False or import_type is None:
+        if not table_names or table_names == "":
+            table_names = ["doi", "url", "request", "fb_request"]
+        else:
+            table_names = [table_name.strip() for table_name in table_names.split(",")]
+        import_csv_append(table_names)
 
 
 @app.route("/")

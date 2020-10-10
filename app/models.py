@@ -14,15 +14,24 @@ class Import(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     import_start = db.Column(db.DateTime(), nullable=False)
-    import_end = db.Column(db.DateTime(), nullable=True)
+    import_end = db.Column(db.DateTime())
     source = db.Column(db.String(512), nullable=False)
     raw = db.Column(db.Text())
 
-    def __init__(self, source, raw):
+    def __init__(self, source, raw, id=False, import_start=False, import_end=False):
         """Init Import."""
+        if id:
+            self.id = id
         self.source = source
         self.raw = raw
-        self.import_start = datetime.now()
+        if import_start:
+            self.import_start = import_start
+        else:
+            self.import_start = datetime.now()
+        if import_end:
+            self.import_end = import_end
+        else:
+            self.import_end = datetime.now()
 
     def __repr__(self):
         """Repr."""
@@ -39,10 +48,10 @@ class Doi(db.Model):
     """
 
     doi = db.Column(db.String(64), primary_key=True, nullable=False)
+    date_published = db.Column(db.DateTime())
+    import_id = db.Column(db.Integer, db.ForeignKey("import.id"), nullable=False)
     pmc_id = db.Column(db.String(256))
     pm_id = db.Column(db.String(256))
-    import_id = db.Column(db.Integer, db.ForeignKey("import.id"), nullable=False)
-    date_published = db.Column(db.DateTime())
     url_doi_new = db.Column(db.Boolean, nullable=False)
     url_doi_old = db.Column(db.Boolean, nullable=False)
     url_doi_lp = db.Column(db.Boolean, nullable=False)
@@ -123,9 +132,17 @@ class Request(db.Model):
     response_status = db.Column(db.String(32))
 
     def __init__(
-        self, doi, request_url, request_type, response_content, response_status
+        self,
+        doi,
+        request_url,
+        request_type,
+        response_content,
+        response_status,
+        id=False,
     ):
         """Init APIRequest."""
+        if id:
+            self.id = id
         self.doi = doi
         self.request_url = request_url
         self.request_type = request_type
@@ -149,15 +166,30 @@ class FBRequest(db.Model):
     plugin_comments = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime())
 
-    def __init__(self, url, response):
+    def __init__(
+        self,
+        url_url,
+        response,
+        reactions=False,
+        shares=False,
+        comments=False,
+        plugin_comments=False,
+        timestamp=False,
+        id=False,
+    ):
         """Init FBRequest."""
+        if id:
+            self.id = id
         self.url_url = url
-        self.response = json.dumps(response)
-        self.reactions = (response["engagement"]["reaction_count"],)
-        self.shares = (response["engagement"]["share_count"],)
-        self.comments = (response["engagement"]["comment_count"],)
-        self.plugin_comments = response["engagement"]["comment_plugin_count"]
-        self.timestamp = datetime.now()
+        self.response = response
+        self.reactions = reactions
+        self.shares = shares
+        self.comments = comments
+        self.plugin_comments = plugin_comments
+        if timestamp:
+            self.timestamp = timestamp
+        else:
+            self.timestamp = datetime.now()
 
     def __repr__(self):
         """Repr."""

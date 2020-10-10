@@ -19,10 +19,9 @@ class Development(Config):
     Database is sqlite file or a postgresql database string passed by an environment variable.
     """
 
-    DEBUG = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     USER_SETTINGS_EXIST = True
-    FLASK_ENV = "development"
+    DEBUG = True
 
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
@@ -30,7 +29,17 @@ class Development(Config):
         SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "app.db")
 
 
-class Travis(Config):
+class Testing(Config):
+    TESTING = True
+    DEBUG = True
+
+    if "SQLALCHEMY_DATABASE_URI" in os.environ:
+        SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
+    else:
+        SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+
+
+class Travis(Testing):
     """
     Setting the test environment settings.
     """
@@ -47,10 +56,6 @@ class Travis(Config):
             SECRET_KEY = os.getenv("SECRET_KEY")
         else:
             print("SECRET_KEY is missing.")
-    if "SQLALCHEMY_DATABASE_URI" in os.environ:
-        SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
-    else:
-        SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
 
 class Production(Config):
@@ -59,7 +64,6 @@ class Production(Config):
     """
 
     USER_SETTINGS_EXIST = True
-    FLASK_ENV = "production"
     # TODO: FLASK_ENV environment variable setzen! oder automatisch via ENVIRONMENT ableiten
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]

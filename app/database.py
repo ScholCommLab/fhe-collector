@@ -4,14 +4,22 @@
 # import app
 # from app import db
 from app.models import Doi, Import, Url, Request, FBRequest
-from app.requests import request_doi_landingpage
+from app.requests import (
+    request_doi_landingpage,
+    request_ncbi_api,
+    request_unpaywall_api,
+    get_graphapi,
+    get_graphapi_urls,
+    get_graphapi_token,
+)
 from app.utils import is_valid_doi
 from pandas import read_csv
 from tqdm import tqdm
 import os
-from json import loads
+from json import loads, dumps
 from app import db
 from datetime import datetime
+from psycopg2 import connect
 
 try:
     from urllib.parse import quote
@@ -52,13 +60,14 @@ def add_entries_to_database(data, import_id):
             db_doi = None
             result_doi = Doi.query.filter_by(doi=entry["doi"]).first()
             if result_doi is None:
+                kwargs = {
+                    "doi": entry["doi"],
+                    "date_published": datetime.strptime(entry["date"], "%Y-%m-%d"),
+                    "import_id": import_id,
+                    "is_valid": True,
+                }
                 try:
-                    db_doi = Doi(
-                        doi=entry["doi"],
-                        date_published=datetime.strptime(entry["date"], "%Y-%m-%d"),
-                        import_id=import_id,
-                        is_valid=True,
-                    )
+                    db_doi = Doi(**kwargs)
                     db.session.add(db_doi)
                     num_dois_added += 1
                     dois_added.append(entry["doi"])
@@ -79,8 +88,9 @@ def add_entries_to_database(data, import_id):
     db.session.commit()
 
     for d in url_import_lst:
+        kwargs = {"url": d["url"], "doi": d["doi"], "url_type": d["url_type"]}
         try:
-            db_url = Url(url=d["url"], doi=d["doi"], url_type=d["url_type"])
+            db_url = Url(**kwargs)
             db.session.add(db_url)
             num_urls_added += 1
         except:
@@ -104,13 +114,14 @@ def add_entries_to_database(data, import_id):
                 doi = entry["doi"]
                 result_doi = Doi.query.filter_by(doi=doi).first()
                 if result_doi is None:
+                    kwargs = {
+                        "doi": doi,
+                        "date_published": datetime.strptime(entry["date"], "%Y-%m-%d"),
+                        "import_id": import_id,
+                        "is_valid": True,
+                    }
                     try:
-                        db_doi = Doi(
-                            doi=doi,
-                            date_published=datetime.strptime(entry["date"], "%Y-%m-%d"),
-                            import_id=import_id,
-                            is_valid=True,
-                        )
+                        db_doi = Doi(**kwargs)
                         db.session.add(db_doi)
                         db.session.commit()
                         num_dois_added += 1
@@ -126,8 +137,9 @@ def add_entries_to_database(data, import_id):
                 url = entry["url"]
                 result_url = Url.query.filter_by(url=url).first()
                 if result_url is None:
+                    kwargs = {"url": url, "doi": doi, "url_type": entry["url_type"]}
                     try:
-                        db_url = Url(url=url, doi=doi, url_type=entry["url_type"])
+                        db_url = Url(**kwargs)
                         db.session.add(db_url)
                         db.session.commit()
                         num_urls_added += 1
@@ -161,7 +173,9 @@ def import_dois_from_api(data):
 
     """
     try:
-        imp = Import("<API>", dumps(data))
+        imp = Import(
+            "<API " + datetime.today().strftime("%Y-%m-%d-%H-%M-%S") + ">", dumps(data)
+        )
         db.session.add(imp)
         db.session.commit()
         response = add_entries_to_database(data, imp.id)
@@ -170,17 +184,6 @@ def import_dois_from_api(data):
         response = "ERROR: Data import from API not working."
         print(response)
         return response
-
-
-def add_import_entry(source, data):
-    try:
-        db_imp = Import(source, data)
-        db.session.add(db_imp)
-        db.session.commit()
-        return db_imp
-    except:
-        print("ERROR: Import() can not be stored in Database.")
-        return False
 
 
 def validate_dois(data):
@@ -218,12 +221,17 @@ def import_init_csv(filename, batch_size):
 
     filename = "{0}/{1}".format(BASE_DIR, filename)
     df = read_csv(filename, encoding="utf8")
-    json_data_raw = df.to_json(orient="records")
+    json_str = df.to_json(orient="records")
     df = df.drop_duplicates(subset="doi")
     df = df.fillna(False)
-    data = loads(df.to_json(orient="records"))
+    data = df.to_dict(orient="records")
 
-    db_imp = add_import_entry("<Init " + filename + ">", json_data_raw)
+    try:
+        db_imp = Import("<INIT " + filename + ">", json_str)
+        db.session.add(db_imp)
+        db.session.commit()
+    except:
+        print("ERROR: Import() can not be stored in Database.")
 
     data = validate_dois(data)
 
@@ -233,13 +241,14 @@ def import_init_csv(filename, batch_size):
             if is_valid:
                 if d["doi"] and d["date"]:
                     db_doi = None
+                    kwargs = {
+                        "doi": d["doi"],
+                        "date_published": datetime.strptime(d["date"], "%Y-%m-%d"),
+                        "import_id": db_imp.id,
+                        "is_valid": True,
+                    }
                     try:
-                        db_doi = Doi(
-                            doi=d["doi"],
-                            date_published=datetime.strptime(d["date"], "%Y-%m-%d"),
-                            import_id=db_imp.id,
-                            is_valid=True,
-                        )
+                        db_doi = Doi(**kwargs)
                         db.session.add(db_doi)
                         num_dois_added += 1
                         dois_added.append(d["doi"])
@@ -248,10 +257,13 @@ def import_init_csv(filename, batch_size):
 
                 if d["url"] and d["url_type"] and db_doi:
                     if d["url"] not in url_list:
+                        kwargs = {
+                            "url": d["url"],
+                            "doi": db_doi.doi,
+                            "url_type": d["url_type"],
+                        }
                         try:
-                            db_url = Url(
-                                url=d["url"], doi=db_doi.doi, url_type=d["url_type"]
-                            )
+                            db_url = Url(**kwargs)
                             db.session.add(db_url)
                             num_urls_added += 1
                         except:
@@ -299,8 +311,9 @@ def create_doi_new_urls(batch_size):
         for d in result_join[i : i + batch_size]:
             url = "https://doi.org/{0}".format(d.doi)
             if url not in db_urls and url not in urls_added:
+                kwargs = {"url": url, "doi": d.doi, "url_type": "doi_new"}
                 try:
-                    db_url = Url(url=url, doi=d.doi, url_type="doi_new")
+                    db_url = Url(**kwargs)
                     d.url_doi_new = True
                     db.session.add(db_url)
                     num_urls_added += 1
@@ -340,8 +353,9 @@ def create_doi_old_urls(batch_size):
         for d in result_join[i : i + batch_size]:
             url = "http://dx.doi.org/{0}".format(quote(d.doi))
             if url not in db_urls and url not in urls_added:
+                kwargs = {"url": url, "doi": d.doi, "url_type": "doi_old"}
                 try:
-                    db_url = Url(url=url, doi=d.doi, url_type="doi_old")
+                    db_url = Url(**kwargs)
                     d.url_doi_old = True
                     db.session.add(db_url)
                     num_urls_added += 1
@@ -369,7 +383,7 @@ def create_doi_lp_urls():
     for row in query:
         db_urls.append(row.url)
 
-    # create doi landing page url
+    # get all DOI's without landing page URL
     result_join = (
         db.session.query(Doi)
         .join(Url)
@@ -378,22 +392,25 @@ def create_doi_lp_urls():
         .all()
     )
     for d in tqdm(result_join):
+        # create doi landing page url
         url = "https://doi.org/{0}".format(quote(d.doi))
         resp = request_doi_landingpage(url)
         resp_url = resp.url
+        kwargs = {
+            "doi": d.doi,
+            "request_url": url,
+            "request_type": "doi_landingpage",
+            "response_content": resp.content,
+            "response_status": resp.status_code,
+        }
         try:
-            db_api = Request(
-                doi=d.doi,
-                request_url=url,
-                request_type="doi_landingpage",
-                response_content=resp.content,
-                response_status=resp.status_code,
-            )
+            db_api = Request(**kwargs)
             db.session.add(db_api)
         except:
             print("WARNING: Request can not be created.")
         if resp_url not in db_urls and resp_url not in urls_added:
-            db_url = Url(url=resp_url, doi=d.doi, url_type="doi_landingpage")
+            kwargs = {"url": resp_url, "doi": d.doi, "url_type": "doi_landingpage"}
+            db_url = Url(**kwargs)
             d.url_doi_lp = True
             db.session.add(db_url)
             num_urls_added += 1
@@ -442,15 +459,16 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
         url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}".format(
             quote(d.doi)
         )
-        resp_data = request_ncbi_api(url, ncbi_tool, ncbi_email, d.doi)
-        db_ncbi = Request(
-            # doi=d.doi,
-            doi=d.doi,
-            request_url=url,
-            request_type="ncbi",
-            response_content=dumps(resp_data),
-            response_status=resp.status_code,
-        )
+        resp = request_ncbi_api(url, ncbi_tool, ncbi_email, d.doi)
+        resp_data = resp.json()
+        kwargs = {
+            "doi": d.doi,
+            "request_url": url,
+            "request_type": "ncbi",
+            "response_content": dumps(resp_data),
+            "response_status": resp.status_code,
+        }
+        db_ncbi = Request(**kwargs)
         db.session.add(db_ncbi)
 
         if "records" in resp_data:
@@ -460,7 +478,8 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
                     quote(resp_data["records"]["pmcid"])
                 )
                 if url not in db_urls and url not in urls_added:
-                    db_url_pmc = Url(doi=d.doi, url_type="pmc")
+                    kwargs = {"doi": d.doi, "url_type": "pmc"}
+                    db_url_pmc = Url(**kwargs)
                     d.url_pmc = True
                     db.session.add(db_url_pmc)
                     num_urls_pmc_added += 1
@@ -471,7 +490,8 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
                     resp_data["records"]["pmid"]
                 )
                 if Url.query.filter_by(url=url_pm).first() is None:
-                    db_url_pm = Url(url=url_pm, doi=d.doi, url_type="pm")
+                    kwargs = {"url": url_pm, "doi": d.doi, "url_type": "pm"}
+                    db_url_pm = Url(**kwargs)
                     d.url_pm = True
                     db.session.add(db_url_pm)
                     num_urls_pm_added += 1
@@ -513,18 +533,17 @@ def create_unpaywall_urls(email):
     for d in tqdm(result_join):
         # send request to Unpaywall API
         url_dict = {}
-        doi_url_encoded = urlparse.quote(d.doi)
-        url = "https://api.unpaywall.org/v2/{0}?email={1}".format(
-            doi_url_encoded, email
-        )
-        resp_data = request_unpaywall_api(url)
-        db_api = Request(
-            doi=d.doi,
-            request_url=url,
-            request_type="unpaywall",
-            response_content=dumps(resp_data),
-            response_status=resp_data.status_code,
-        )
+        url = "https://api.unpaywall.org/v2/{0}?email={1}".format(quote(d.doi), email)
+        resp = request_unpaywall_api(url)
+        resp_data = resp.json()
+        kwargs = {
+            "doi": d.doi,
+            "request_url": url,
+            "request_type": "unpaywall",
+            "response_content": dumps(resp_data),
+            "response_status": resp.status_code,
+        }
+        db_api = Request(**kwargs)
         d.url_unpaywall = True
         db.session.add(db_api)
         db.session.commit()
@@ -549,7 +568,8 @@ def create_unpaywall_urls(email):
         # store URL's in database
         for url_type, url in url_dict.items():
             if url not in db_urls and url not in urls_added:
-                db_url = Url(url=url, doi=d.doi, url_type=url_type)
+                kwargs = {"url": url, "doi": d.doi, "url_type": url_type}
+                db_url = Url(**kwargs)
                 d.url_unpaywall = True
                 db.session.add(db_url)
                 num_urls_unpaywall_added += 1
@@ -558,6 +578,58 @@ def create_unpaywall_urls(email):
 
     db.session.close()
     print("{0} Unpaywall url's added to database.".format(num_urls_unpaywall_added))
+
+
+def get_fb_data(app_id, app_secret, batch_size):
+    """Get app access token.
+
+    Example Response:
+    {'id': 'http://dx.doi.org/10.22230/src.2010v1n2a24',
+    'engagement': { 'share_count': 0, 'comment_plugin_count': 0,
+                    'reaction_count': 0, 'comment_count': 0}}
+    """
+    token = get_graphapi_token(app_id, app_secret)
+    fb_graph = get_graphapi(token["access_token"])
+
+    fb_request_added = 0
+    result_url = Url.query.all()
+
+    for i in range(0, len(result_url), batch_size):
+        batch = result_url[i : i + batch_size]
+        url_list = []
+        for row in batch:
+            url_list.append(row.url)
+        urls_response = get_graphapi_urls(fb_graph, url_list)
+        for url, response in urls_response.items():
+            kwargs = {
+                "url_url": url,
+                "response": json.dumps(response),
+                "reactions": response["engagement"]["reaction_count"],
+                "shares": response["engagement"]["share_count"],
+                "comments": response["engagement"]["comment_count"],
+                "plugin_comments": response["engagement"]["comment_plugin_count"],
+                "timestamp": datetime.now(),
+            }
+            db_fb_request = FBRequest(**kwargs)
+            db.session.add(db_fb_request)
+            fb_request_added += 1
+        db.session.commit()
+
+    db.session.close()
+    print(
+        "{0} Facebook openGraph request's added to database.".format(fb_request_added)
+    )
+
+
+def delete_imports():
+    """Delete all import entries."""
+    try:
+        imports_deleted = db.session.query(Import).delete()
+        db.session.commit()
+        print(imports_deleted, "imports deleted from database.")
+    except:
+        db.session.rollback()
+        print("ERROR: Imports can not be deleted from database.")
 
 
 def delete_dois():
@@ -620,7 +692,7 @@ def export_tables_to_csv(table_names, db_uri):
     filename_list = [
         BASE_DIR
         + "/app/static/export/"
-        + datetime.today().strftime("%Y-%m-%d")
+        + datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
         + "_"
         + table
         + ".csv"
@@ -628,32 +700,30 @@ def export_tables_to_csv(table_names, db_uri):
     ]
 
     for idx, filename in enumerate(filename_list):
-        sql = "COPY " + table_names[idx] + " TO STDOUT DELIMITER ',' CSV HEADER;"
+        sql = (
+            "COPY "
+            + table_names[idx]
+            + " TO STDOUT (FORMAT CSV, DELIMITER ',', HEADER true);"
+        )
         cur.copy_expert(sql, open(filename, "w"))
 
 
-def import_csv(table_names, delete_tables):
-    """Import data coming from CSV file."""
-    if delete_tables:
-        import_csv_recreate(table_names)
-    else:
-        import_csv_append(table_names)
-
-
-def import_csv_recreate(table_names):
+def import_csv_reset(table_names):
     """Import data coming from CSV file.
 
     Delete all data in advance and do fresh import.
 
     """
     table2model = {
+        "import": Import,
         "doi": Doi,
         "url": Url,
-        "api_request": Request,
+        "request": Request,
         "fb_request": FBRequest,
     }
 
-    delete_data()
+    db.drop_all()
+    db.create_all()
 
     filename_list = [
         BASE_DIR + "/app/static/import/" + table + ".csv" for table in table_names
@@ -661,22 +731,20 @@ def import_csv_recreate(table_names):
 
     for idx, filename in enumerate(filename_list):
         model = table2model[table_names[idx]]
-        df = pd.read_csv(filename)
-        data_str = df.to_json(orient="records")
-        db_imp = Import("<Import " + filename + ">", data_str)
-        db.session.add(db_imp)
-        db.session.commit()
+        df = read_csv(filename, true_values=["t", "true"], false_values=["f", "false"])
 
-        for row in df.to_dict(orient="records"):
-            if table_names[idx] == "doi":
-                model = Doi(**row)
+        for d in df.to_dict(orient="records"):
+            if table_names[idx] == "import":
+                table = Import(**d)
+            elif table_names[idx] == "doi":
+                table = Doi(**d)
             elif table_names[idx] == "url":
-                model = Url(**row)
-            elif table_names[idx] == "api_request":
-                model = Request(**row)
+                table = Url(**d)
+            elif table_names[idx] == "request":
+                table = Request(**d)
             elif table_names[idx] == "fb_request":
-                model = FBRequest(**row)
-            db.session.add(model)
+                table = FBRequest(**d)
+            db.session.add(table)
         db.session.commit()
 
 
@@ -686,126 +754,75 @@ def import_csv_append(table_names):
     Insert all data in advance and do fresh import.
 
     """
-
     for table_name in table_names:
         filename = BASE_DIR + "/app/static/import/" + table_name + ".csv"
-        df = pd.read_csv(filename, encoding="utf8")
-        data_str = df.to_json(orient="records")
+        df = read_csv(
+            filename,
+            encoding="utf8",
+            true_values=["t", "true"],
+            false_values=["f", "false"],
+        )
         data = df.to_dict(orient="records")
-        db_imp = Import("<Import " + filename + ">", data_str)
-        db.session.add(db_imp)
-        db.session.commit()
 
-        if table_name == "doi":
+        if table_name == "import":
             print("Import Doi table:")
-            dois_added = 0
-            for entry in tqdm(data):
-                result_doi = Doi.query.filter_by(doi=entry["doi"]).first()
+            imports_added = 0
+            try:
+                db_imp = Import(
+                    "<IMPORT_APPEND " + filename + ">", df.to_json(orient="records")
+                )
+                db.session.add(db_imp)
+                db.session.commit()
+            except:
+                print("ERROR: Import() can not be stored in Database.")
+            for d in tqdm(data):
+                print(d)
+                result_doi = Doi.query.filter_by(doi=d["doi"]).first()
                 if result_doi is None:
-                    if entry["is_valid"] == "t":
-                        is_valid = True
-                    elif entry["is_valid"] == "f":
-                        is_valid = False
-
-                    if entry["url_doi_lp"] == "t":
-                        url_doi_lp = True
-                    elif entry["url_doi_lp"] == "f":
-                        url_doi_lp = False
-
-                    if entry["url_doi_new"] == "t":
-                        url_doi_new = True
-                    elif entry["url_doi_new"] == "f":
-                        url_doi_new = False
-
-                    if entry["url_doi_old"] == "t":
-                        url_doi_old = True
-                    elif entry["url_doi_old"] == "f":
-                        url_doi_old = False
-
-                    if entry["url_pm"] == "t":
-                        url_pm = True
-                    elif entry["url_pm"] == "f":
-                        url_pm = False
-
-                    if entry["url_pmc"] == "t":
-                        url_pmc = True
-                    elif entry["url_pmc"] == "f":
-                        url_pmc = False
-
-                    if entry["url_unpaywall"] == "t":
-                        url_unpaywall = True
-                    elif entry["url_unpaywall"] == "f":
-                        url_unpaywall = False
-
-                    db_doi = Doi(
-                        doi=entry["doi"],
-                        import_id=db_imp.id,
-                        is_valid=is_valid,
-                        pm_id=entry["pm_id"],
-                        pmc_id=entry["pmc_id"],
-                        date_published=datetime.strptime(
-                            entry["date_published"], "%Y-%m-%d %H:%M:%S"
-                        ),
-                        url_doi_lp=url_doi_lp,
-                        url_doi_new=url_doi_new,
-                        url_doi_old=url_doi_old,
-                        url_pm=url_pm,
-                        url_pmc=url_pmc,
-                        url_unpaywall=url_unpaywall,
-                    )
+                    d["import_id"] = db_imp.id
+                    print(d)
+                    db_doi = Doi(**d)
                     db.session.add(db_doi)
                     db.session.commit()
                     dois_added += 1
             print("{0} doi's added to database.".format(dois_added))
+        elif table_name == "doi":
+            print("Import Doi table:")
+            dois_added = 0
+            for d in tqdm(data):
+                result_doi = Doi.query.filter_by(doi=d["doi"]).first()
+                if result_doi is None:
+                    db_doi = Doi(**d)
+                    db.session.add(db_doi)
+                    db.session.commit()
+                    dois_added += 1
+            print("{0} DOI's added to database.".format(dois_added))
         elif table_name == "url":
             print("Import Url table:")
             urls_added = 0
-            for entry in tqdm(data):
-                result_url = Url.query.filter_by(url=entry["url"]).first()
+            for d in tqdm(data):
+                result_url = Url.query.filter_by(url=d["url"]).first()
                 if result_url is None:
-                    db_url = Url(
-                        url=entry["url"],
-                        doi=entry["doi"],
-                        url_type=entry["url_type"],
-                        date_added=datetime.strptime(
-                            entry["date_added"], "%Y-%m-%d %H:%M:%S.%f"
-                        ),
-                    )
+                    db_url = Url(**d)
                     db.session.add(db_url)
                     db.session.commit()
                     urls_added += 1
-            print("{0} url's added to database.".format(urls_added))
-        elif table_name == "api_request":
+            print("{0} URL's added to database.".format(urls_added))
+        elif table_name == "request":
             print("Import Requests table:")
             requests_added = 0
-            for entry in tqdm(data):
-                db_request = Request(
-                    doi=entry["doi"],
-                    request_url=entry["request_url"],
-                    request_type=entry["request_type"],
-                    response_content=entry["response_content"],
-                    response_status=entry["response_status"],
-                )
+            for d in tqdm(data):
+                db_request = Request(**d)
                 db.session.add(db_request)
                 db.session.commit()
                 requests_added += 1
-            print("{0} request's added to database.".format(requests_added))
+            print("{0} Requests added to database.".format(requests_added))
         elif table_name == "fb_request":
             print("Import FBRequests table:")
             fbrequests_added = 0
-            for entry in tqdm(data):
-                db_fbrequest = FBRequest(
-                    url_url=entry["url_url"],
-                    response=entry["response"],
-                    reactions=entry["reactions"],
-                    shares=entry["shares"],
-                    comments=entry["comments"],
-                    plugin_comments=entry["plugin_comments"],
-                    timestamp=datetime.strptime(
-                        entry["timestamp"], "%Y-%m-%d %H:%M:%S.%f"
-                    ),
-                )
+            for d in tqdm(data):
+                db_fbrequest = FBRequest(**d)
                 db.session.add(db_fbrequest)
                 db.session.commit()
                 fbrequests_added += 1
-            print("{0} fbrequest's added to database.".format(fbrequests_added))
+            print("{0} FBRequests added to database.".format(fbrequests_added))
