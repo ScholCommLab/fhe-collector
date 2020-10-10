@@ -8,9 +8,9 @@ from app.requests import (
     request_doi_landingpage,
     request_ncbi_api,
     request_unpaywall_api,
-    get_graphapi,
-    get_graphapi_urls,
-    get_graphapi_token,
+    get_GraphAPI,
+    get_GraphAPI_urls,
+    get_GraphAPI_token,
 )
 from app.utils import is_valid_doi
 from pandas import read_csv
@@ -588,8 +588,8 @@ def get_fb_data(app_id, app_secret, batch_size):
     'engagement': { 'share_count': 0, 'comment_plugin_count': 0,
                     'reaction_count': 0, 'comment_count': 0}}
     """
-    token = get_graphapi_token(app_id, app_secret)
-    fb_graph = get_graphapi(token["access_token"])
+    token = get_GraphAPI_token(app_id, app_secret)
+    fb_graph = get_GraphAPI(token["access_token"])
 
     fb_request_added = 0
     result_url = Url.query.all()
@@ -599,7 +599,7 @@ def get_fb_data(app_id, app_secret, batch_size):
         url_list = []
         for row in batch:
             url_list.append(row.url)
-        urls_response = get_graphapi_urls(fb_graph, url_list)
+        urls_response = get_GraphAPI_urls(fb_graph, url_list)
         for url, response in urls_response.items():
             kwargs = {
                 "url_url": url,
