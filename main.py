@@ -62,6 +62,8 @@ def init(filename=None):
     if not filename:
         filename = app.config["CSV_FILENAME"]
     batch_size = app.config["URL_BATCH_SIZE"]
+    db.drop_all()
+    db.create_all()
     import_init_csv(filename, batch_size)
     create_doi_old_urls(app.config["URL_BATCH_SIZE"])
     create_doi_new_urls(app.config["URL_BATCH_SIZE"])

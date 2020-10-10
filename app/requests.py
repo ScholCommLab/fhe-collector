@@ -32,6 +32,11 @@ def request_unpaywall_api(url):
     return resp
 
 
+def request_unpaywall_api(url):
+    resp = get(url)
+    return resp
+
+
 def get_GraphAPI(api_token):
     return GraphAPI(api_token, version="2.10")
 
