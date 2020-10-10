@@ -42,9 +42,7 @@ data/
 dev/
 app/static/import/*
 app/static/export/*
-settings_production.py
-settings_testing.py
-settings_development.py
+settings_*.json
 settings_user.py
 snippets.md
 fhe.log*
