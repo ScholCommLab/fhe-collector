@@ -22,30 +22,12 @@ This instructions are to setup the development environment, which is also the de
 
 **Prerequisites**
 
-* registered Facebook app
-* Configured server, which can deliver a Flask app
+* Registered Facebook app
+* Configured server, which can deliver a Flask app: we recommend using our [Docker-Container](https://github.com/skasberger/docker_fhe-collector) for this.
 
-**Download Flask app**
+### PostgreSQL
 
-Get the app on your computer, into your webservers directory (e. g. vhost).
-
-```bash
-cd /PATH/TO/VHOST
-git clone https://github.com/ScholCommLab/fhe-collector.git
-cd fhe-collector
-```
-
-**Setup virtualenv**
-
-Start the virtual environment to install the needed python packages.
-
-```bash
-virtualenv --python=/usr/bin/python3 venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-**Install postgreSQL and create app databse**
+**Install postgreSQL and create app database**
 
 If you want to use postgreSQL as your primary database, execute the following commands. If not, the app will default to SQLite. We recommend using postgreSQL as your standard database, cause we experienced some issues with SQLite during development.
 
@@ -82,52 +64,57 @@ flask db upgrade
 
 **User and database settings**
 
-Rename the [settings_user_sample.py](settings_user_sample.py) file to `settings_user.py` and add the missing user settings in it.
+Rename the [app/settings_sample.json](app/settings_sample.json) file to `settings_INSTANCE.json` and add the missing user settings in it. Replace "INSTANCE" with a fitting name (e. g. `production`, `development`).
 
-## Development
+### FHE Collector
 
-### Running
+**Download FHE Collector**
 
-Before you can start here, you have to do all steps in the Setup section.
-
-**Tell starting point of application**
+Get the app on your computer, into your webservers directory (e. g. vhost).
 
 ```bash
-export FLASK_APP=fhe.py
+cd /PATH/TO/VHOST
+git clone https://github.com/ScholCommLab/fhe-collector.git
+cd fhe-collector
 ```
 
-**Configure the environment**
+**Install requirements**
 
-Set the `ENV` variable and `DEBUG` to `true` if you are developing.
-
-* `development`: is the default one. Does not need to be set, unless it does not work as expected.
-* `testing`: to execute the tests.
-* `production`: to run in production mode.
+Start the virtual environment to install the needed python packages.
 
 ```bash
-export ENV=development
-export DEBUG=true
+pip install -r requirements.txt
 ```
 
-**Configure database**
+**Set environment variables**
 
-Set your database. The following example show how to connect to your postgreSQL database `fhe_collector`.
+* `FLASK_APP`: name of the initial app python file, in our case `main`.
+* `FLASK_ENV`: `development` or `production`
+* `SQLALCHEMY_DATABASE_URI`: Database URI for SQLAlchemy.
+* `YOURAPPLICATION_SETTINGS`: name of instance settings (must be inside `app/`).
+
+Example:
 
 ```bash
-export SQLALCHEMY_DATABASE_URI='postgresql://localhost/fhe_collector'
+export FLASK_APP="main"
+export FLASK_ENV=development
+export SQLALCHEMY_DATABASE_URI="postgresql://localhost/fhe_collector"
+export YOURAPPLICATION_SETTINGS="settings_development.json"
 ```
 
 **Run**
 
-Run the app as usual:
+Run the flask app:
 
 ```bash
 flask run
 ```
 
-### Flask Commands
+## COMMANDS
 
-To execute flask commands in the shell, the following pattern is used:
+You can find all commands listed up via `flask --help` and in the file `main.py`.
+
+To execute flask commands, the following pattern is used:
 
 ```bash
 flask COMMAND <OPTIONAL>
@@ -135,26 +122,41 @@ flask COMMAND <OPTIONAL>
 
 Commands offered:
 
-* `init_data`
-* `delete_init`
-* `reset_init`
-* `delete_dois`
-* `create_doi_urls`
-* `create_doi_new_urls`
-* `create_doi_old_urls`
-* `create_doi_lp_urls`
-* `create_ncbi_urls`
-* `create_unpaywall_urls`
-* `delete_urls`
-* `delete_apirequests`
-* `create_fbrequests`
-* `delete_fbrequests`
-* `delete_data`
-* `reset_data`
-* `export_tables`
-* `import_tables`
+* `init`: Initialize data at the beginning.
+  * `filename`: CSV filename to be imported (optional).
+* `doi-new`: Create all new DOI URL's.
+* `doi-old`: Create all old DOI URL's.
+* `doi-lp`: Create all DOI Landing Page URL's.
+* `ncbi`: Create all NCBI URL's.
+* `unpaywall`: Create all Unpaywall URL's.
+* `fb`: Get all Facebook data.
+* `res-tables`: Delete and create empty tables.
+* `imp`: Import the tables.
+  * `table_names`: String with table names, separated by comma.
+  * `import_type`: `append` to add data to the existing or `reset` to re-create the tables.
+* `exp`: Export the tables.
+  * `table_names`: String with table names, separated by comma.
+* `db`: Run database commands.
+* `run`: Run the Flask app on your production or development server.
+* `shell`: get inside the Flask shell.
 
 For more details on each command, look inside the code documentation.
+
+## Development
+
+**Install**
+
+```bash
+cd /PATH/TO/VHOST
+git clone https://github.com/ScholCommLab/fhe-collector.git
+cd fhe-collector
+python3 -m venv venv
+source venv/bin/activate
+pip install tox
+pip install -r requirements.txt
+pip install -r deps/dev-requirements.txt
+pre-commit install
+```
 
 ### Database Migration
 
@@ -168,13 +170,6 @@ flask db upgrade
 ### Testing
 
 To execute the tests, set the application mode and unset database URI.
-
-```
-export FLASK_APP=fhe.py
-export ENV=testing
-```
-
-If you set the database URI as an environment variable and you don't want to use it anymore, simply unset it.
 
 ```
 unset SQLALCHEMY_DATABASE_URI
@@ -222,14 +217,4 @@ Use Sphinx to create class and function documentation out of the doc-strings.
 
 ```
 tox -e docs
-```
-
-## Production
-
-To run the app on production, rename the [settings_production_sample.py](settings_production_sample.py) file to `settings_production.py` and add the missing database settings. Also set the `ỲOURAPPLICATION_MODE` to `development`.
-
-```
-export FLASK_APP=fhe.py
-export ENV=production
-flask run
 ```
