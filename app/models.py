@@ -180,7 +180,7 @@ class FBRequest(db.Model):
         """Init FBRequest."""
         if id:
             self.id = id
-        self.url_url = url
+        self.url_url = url_url
         self.response = response
         self.reactions = reactions
         self.shares = shares
