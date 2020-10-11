@@ -37,8 +37,8 @@ def request_unpaywall_api(url):
     return resp
 
 
-def get_GraphAPI(api_token):
-    return GraphAPI(api_token, version="2.10")
+def get_GraphAPI(api_token, version):
+    return GraphAPI(api_token, version=version)
 
 
 def get_GraphAPI_urls(fb_graph, url_list):

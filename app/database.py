@@ -589,7 +589,7 @@ def get_fb_data(app_id, app_secret, batch_size):
                     'reaction_count': 0, 'comment_count': 0}}
     """
     token = get_GraphAPI_token(app_id, app_secret)
-    fb_graph = get_GraphAPI(token["access_token"])
+    fb_graph = get_GraphAPI(token["access_token"], version="3.1")
 
     fb_request_added = 0
     result_url = Url.query.all()
@@ -603,7 +603,7 @@ def get_fb_data(app_id, app_secret, batch_size):
         for url, response in urls_response.items():
             kwargs = {
                 "url_url": url,
-                "response": json.dumps(response),
+                "response": dumps(response),
                 "reactions": response["engagement"]["reaction_count"],
                 "shares": response["engagement"]["share_count"],
                 "comments": response["engagement"]["comment_count"],
