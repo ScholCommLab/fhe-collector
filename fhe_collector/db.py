@@ -38,6 +38,7 @@ def get_db():
     if "db" not in g:
         # g.db = connect(current_app.config["DATABASE"])
         from flask_sqlalchemy import SQLAlchemy
+
         # g.db = SQLAlchemy()
         g.db = SQLAlchemy(current_app)
     return g.db
@@ -75,6 +76,7 @@ def init_app(app):
     app.cli.add_command(export_command)
     app.cli.add_command(import_command)
 
+
 @click.command("init-data")
 @click.option("--filename", help="Filename of CSV to be imported.")
 @with_appcontext
@@ -100,6 +102,7 @@ def init_data_command(filename=None):
     create_doi_old_urls(current_app.config["URL_BATCH_SIZE"])
     create_doi_new_urls(current_app.config["URL_BATCH_SIZE"])
 
+
 @click.command("doi-new")
 @with_appcontext
 def doi_new_command():
@@ -119,6 +122,7 @@ def doi_old_command():
 def doi_lp_command():
     """Create the doi landing page URL's."""
     create_doi_lp_urls()
+
 
 @click.command("ncbi")
 @with_appcontext
@@ -148,7 +152,7 @@ def fb_command():
 # @app.cli.command()
 # def res_tables():
 #     """Delete all entries in all tables."""
-    # db = get_db()
+# db = get_db()
 #     db.drop_all()
 #     db.create_all()
 

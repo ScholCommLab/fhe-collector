@@ -3,6 +3,7 @@ from flask import render_template
 
 bp = Blueprint("main", __name__)
 
+
 @bp.route("/")
 @bp.route("/index")
 def index():

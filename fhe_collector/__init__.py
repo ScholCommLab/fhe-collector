@@ -52,6 +52,7 @@ def create_app():
         app.config.from_object("fhe_collector.settings_default.Development")
         print("* Settings Development: Loaded")
         from flask_debugtoolbar import DebugToolbarExtension
+
         DebugToolbarExtension(app)
     elif FLASK_ENV == "production" and not is_travis:
         app.config.from_object("fhe_collector.settings_default.Production")
@@ -64,6 +65,7 @@ def create_app():
         )
         import logging
         from logging.handlers import RotatingFileHandler
+
         file_handler.setFormatter(
             logging.Formatter(
                 "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
@@ -78,6 +80,7 @@ def create_app():
     print("* Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
 
     from fhe_collector import db
+
     db.init_app(app)
 
     db = SQLAlchemy(app)
@@ -86,12 +89,15 @@ def create_app():
     migrate.init_app(app, db)
 
     from fhe_collector.errors import bp as errors_bp
+
     app.register_blueprint(errors_bp)
 
     from fhe_collector.main import bp as main_bp
+
     app.register_blueprint(main_bp)
 
     from fhe_collector.api import bp as api_bp
+
     app.register_blueprint(api_bp)
 
     @app.shell_context_processor
