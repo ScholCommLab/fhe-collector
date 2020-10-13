@@ -1,0 +1,4 @@
+graft fhe_collector/data
+graft fhe_collector/static
+graft fhe_collector/templates
+global-exclude *.pyc

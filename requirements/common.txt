@@ -1,3 +1,4 @@
+# Common requirements.
 flask-migrate
 alembic
 flask
@@ -7,4 +8,3 @@ click
 pandas==0.25.2
 tqdm
 facebook-sdk
-python-dotenv

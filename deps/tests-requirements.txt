@@ -1,2 +1,0 @@
-pytest-cov==2.7.1
-pytest-flask==0.10.0

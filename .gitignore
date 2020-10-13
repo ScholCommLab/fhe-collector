@@ -34,6 +34,7 @@ pip-wheel-metadata
 pytest.ini
 
 # Personal
+.env
 notes*.md
 stash*.*
 setup.sh

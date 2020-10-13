@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -11,6 +12,7 @@ class Config(object):
     DEBUG = False
     TESTING = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    load_dotenv()
 
 
 class Development(Config):

@@ -1,10 +1,10 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ORM Models."""
-from app import db
 from datetime import datetime
-import json
+from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy()
 
 class Import(db.Model):
     """Imports of basic data done.
