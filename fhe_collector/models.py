@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 """ORM Models."""
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
+from fhe_collector import db
 
 
 class Import(db.Model):

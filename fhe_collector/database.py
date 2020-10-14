@@ -21,6 +21,8 @@ from flask import g
 from flask import current_app
 from flask.cli import with_appcontext
 import click
+from flask_migrate import Migrate
+from flask_migrate import upgrade
 
 try:
     from urllib.parse import quote
@@ -36,12 +38,26 @@ def get_db():
     again.
     """
     if "db" not in g:
-        # g.db = connect(current_app.config["DATABASE"])
-        from flask_sqlalchemy import SQLAlchemy
+        from fhe_collector import db
 
-        # g.db = SQLAlchemy()
-        g.db = SQLAlchemy(current_app)
+        db.init_app(current_app)
+        g.db = db
     return g.db
+
+
+def init_app(app):
+    app.teardown_appcontext(close_db)
+    app.cli.add_command(init_db_command)
+    app.cli.add_command(drop_db_command)
+    app.cli.add_command(init_data_command)
+    app.cli.add_command(doi_new_command)
+    app.cli.add_command(doi_old_command)
+    app.cli.add_command(doi_lp_command)
+    app.cli.add_command(ncbi_command)
+    app.cli.add_command(unpaywall_command)
+    app.cli.add_command(fb_command)
+    app.cli.add_command(export_command)
+    app.cli.add_command(import_command)
 
 
 def close_db(e=None):
@@ -54,27 +70,32 @@ def close_db(e=None):
 def init_db():
     """Clear existing data and create new tables."""
     db = get_db()
+    # upgrade()
+    db.create_all()
 
 
 @click.command("init-db")
+@with_appcontext
 def init_db_command():
     """Clear existing data and create new tables."""
     init_db()
     click.echo("Initialized the database.")
 
 
-def init_app(app):
-    app.teardown_appcontext(close_db)
-    app.cli.add_command(init_db_command)
-    app.cli.add_command(init_data_command)
-    app.cli.add_command(doi_new_command)
-    app.cli.add_command(doi_old_command)
-    app.cli.add_command(doi_lp_command)
-    app.cli.add_command(ncbi_command)
-    app.cli.add_command(unpaywall_command)
-    app.cli.add_command(fb_command)
-    app.cli.add_command(export_command)
-    app.cli.add_command(import_command)
+@with_appcontext
+def drop_db():
+    """Clear existing data and create new tables."""
+    with current_app.app_context():
+        db = get_db()
+        db.drop_all(app=current_app)
+
+
+@click.command("drop-db")
+@with_appcontext
+def drop_db_command():
+    """Clear existing data and create new tables."""
+    drop_db()
+    click.echo("Dropped all tables in the database.")
 
 
 @click.command("init-data")
@@ -95,9 +116,6 @@ def init_data_command(filename=None):
     if not filename:
         filename = current_app.config["CSV_FILENAME"]
     batch_size = current_app.config["URL_BATCH_SIZE"]
-    db = get_db()
-    db.drop_all()
-    db.create_all()
     import_init_csv(filename, batch_size)
     create_doi_old_urls(current_app.config["URL_BATCH_SIZE"])
     create_doi_new_urls(current_app.config["URL_BATCH_SIZE"])
@@ -400,8 +418,6 @@ def import_init_csv(filename, batch_size):
     dois_added = []
     url_import_lst = []
     url_list = []
-    db = get_db()
-
     db = get_db()
     filename = "{0}/{1}".format(BASE_DIR, filename)
     df = read_csv(filename, encoding="utf8")

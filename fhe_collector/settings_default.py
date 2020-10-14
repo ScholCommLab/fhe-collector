@@ -22,13 +22,12 @@ class Development(Config):
     """
 
     DEBUG_TB_INTERCEPT_REDIRECTS = False
-    USER_SETTINGS_EXIST = True
     DEBUG = True
 
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
     else:
-        SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "app.db")
+        SQLALCHEMY_DATABASE_URI = "postgresql://localhost/fhe_collector"
 
 
 class Testing(Config):
@@ -38,7 +37,7 @@ class Testing(Config):
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
     else:
-        SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+        SQLALCHEMY_DATABASE_URI = "postgresql://localhost/fhe_collector_test"
 
 
 class Travis(Testing):
@@ -65,9 +64,8 @@ class Production(Config):
     Setting the production environment settings.
     """
 
-    USER_SETTINGS_EXIST = True
     # TODO: FLASK_ENV environment variable setzen! oder automatisch via ENVIRONMENT ableiten
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
     else:
-        SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "app.db")
+        SQLALCHEMY_DATABASE_URI = "postgresql://localhost/fhe_collector"
