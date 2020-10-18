@@ -18,13 +18,7 @@ def app():
     db_fd, db_path = tempfile.mkstemp()
 
     # create the app with common test config
-    app = create_app(
-        {
-            "TESTING": True,
-            "APP_SETTINGS": "settings_development.json",
-            "SQLALCHEMY_DATABASE_URI": "postgresql://localhost/fhe_collector_test",
-        }
-    )
+    app = create_app({"TESTING": True,})
 
     # create the database and load test data
     with app.app_context():
