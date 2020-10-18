@@ -38,7 +38,7 @@ class Testing(Config):
     print("* Settings Testing: Loaded")
 
 
-class Travis(Testing):
+class Travis(Config):
     """
     Setting the test environment settings.
     """
