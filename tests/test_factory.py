@@ -15,6 +15,8 @@ if "DEBUG" in os.environ:
     del os.environ["DEBUG"]
 if "DEBUG_TB_INTERCEPT_REDIRECTS" in os.environ:
     del os.environ["DEBUG_TB_INTERCEPT_REDIRECTS"]
+if "TESTING" in os.environ:
+    del os.environ["TESTING"]
 
 
 def test_config_development():
@@ -86,13 +88,7 @@ def test_config_development_app_settings():
 
 
 def test_config_testing(app):
-    app = create_app(
-        {
-            "FLASK_ENV": "development",
-            "SECRET_KEY": "secret-testing-key",
-            "TESTING": True,
-        }
-    )
+    app = create_app({"SECRET_KEY": "secret-testing-key", "TESTING": True,})
     assert "FLASK_ENV" in app.config
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config
@@ -133,7 +129,7 @@ def test_config_testing_travis():
     assert "secret-travis-key" == app.config["SECRET_KEY"]
     assert "SQLALCHEMY_DATABASE_URI" in app.config
     assert (
-        "postgresql://localhost/fhe_collector_test"
+        "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
         == app.config["SQLALCHEMY_DATABASE_URI"]
     )
     assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
