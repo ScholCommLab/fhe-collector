@@ -43,22 +43,21 @@ class Travis(Config):
     Setting the test environment settings.
     """
 
+    # only execute if code is running on travis
+    TRAVIS = True
     DEBUG = True
     SQLALCHEMY_ECHO = True
-    # only execute if code is running on travis
-    if "TRAVIS" in os.environ:
-        TRAVIS = True
-        SQLALCHEMY_DATABASE_URI = (
-            "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
-        )
-        # NCBI_TOOL = os.getenv("NCBI_TOOL")
-        # APP_EMAIL = os.getenv("APP_EMAIL")
-        # FB_APP_ID = os.getenv("FB_APP_ID")
-        # FB_APP_SECRET = os.getenv("FB_APP_SECRET")
-        # if "SECRET_KEY" in os.environ:
-        #     SECRET_KEY = os.getenv("SECRET_KEY")
-        # else:
-        #     print("SECRET_KEY is missing.")
+    SQLALCHEMY_DATABASE_URI = (
+        "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
+    )
+    # NCBI_TOOL = os.getenv("NCBI_TOOL")
+    # APP_EMAIL = os.getenv("APP_EMAIL")
+    # FB_APP_ID = os.getenv("FB_APP_ID")
+    # FB_APP_SECRET = os.getenv("FB_APP_SECRET")
+    # if "SECRET_KEY" in os.environ:
+    #     SECRET_KEY = os.getenv("SECRET_KEY")
+    # else:
+    #     print("SECRET_KEY is missing.")
     print("* Settings Travis: Loaded")
 
 
