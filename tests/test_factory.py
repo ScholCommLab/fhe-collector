@@ -90,7 +90,9 @@ def test_config_development_app_settings():
 
 
 def test_config_testing(app):
-    app = create_app({"SECRET_KEY": "secret-testing-key", "TESTING": True,})
+    app = create_app(
+        {"SECRET_KEY": "secret-testing-key", "TESTING": True, "TRAVIS": False}
+    )
     assert "FLASK_ENV" not in app.config
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config
