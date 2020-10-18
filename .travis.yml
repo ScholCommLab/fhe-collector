@@ -2,22 +2,20 @@ language:        python
 cache:           pip
 dist:            xenial
 
-sudo: false
-
 matrix:
   include:
-    - python: 3.5
-      env: TOXENV=py35
-    - python: 3.6
-      env: TOXENV=py36
-    - python: 3.7
-      env: TOXENV=py37
-    - python: 3.6
-      env: TOXENV=coverage
-    - python: 3.6
-      env: TOXENV=coveralls
-    - python: 3.6
-      env: TOXENV=packaging
+    - python:    3.4
+      env:       TOXENV=py34
+    - python:    3.5
+      env:       TOXENV=py35
+    - python:    3.6
+      env:       TOXENV=py36
+    - python:    3.7
+      env:       TOXENV=py37
+    - python:    3.6
+      env:       TOXENV=coverage
+    - python:    3.6
+      env:       TOXENV=coveralls
 
 branches:
   only:
@@ -26,7 +24,7 @@ branches:
 
 before_install:
   - echo $TRAVIS_PYTHON_VERSION
-  - export ENV=testing
+  - export FLASK_ENV=development
 
 services: postgresql
 
@@ -38,11 +36,9 @@ install:
   - easy_install --version
   - pip --version
   - tox --version
-  - "pip install -r requirements.txt"
-  - "pip install -r requirements/tests.txt"
 
 before_script:
-  - export FLASK_APP="$TRAVIS_BUILD_DIR/main.py"
+  - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe_collector"
   - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
   - export FLASK_DEBUG=1
 

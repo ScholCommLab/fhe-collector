@@ -20,10 +20,16 @@ def test_homepage_url(client):
     assert 200 == rv.status_code
 
 
-def test_add_data_url(client):
-    """Start with a blank database."""
-
-    rv = client.get("/api/v1/add_data")
-    assert 200 == rv.status_code
-    print(rv.data)
-    assert api_add_data_response() == loads(rv.data)
+# def test_add_data(client):
+#     """Start with a blank database."""
+#
+#     rv = client.get("/api/v1/add_data")
+#     assert 200 == rv.status_code
+#     assert api_add_data_response() == loads(rv.data)
+#
+#     response = client.post(
+#         '/api/v1/add_data',
+#         data={"doi": "10.22230/src.2014v5n2a172", "url": "http://src-online.ca/index.php/src/article/view/172", "url_type": "ojs"},
+#         headers={"X-API-Key": client.config["API_TOKEN"]}
+#     )
+#     assert 'http://localhost/auth/login' == response.headers['Location']

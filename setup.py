@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Find out more at https://github.com/AUSSDA/pyDataverse."""
+"""Find out more at https://github.com/ScholCommLab/fhe-collector."""
 import codecs
 import os
 import re
@@ -53,19 +53,20 @@ INSTALL_REQUIREMENTS = [
     # A string or list of strings specifying what other distributions need to
     # be installed when this one is.
     "flask",
-    "alembic",
     "flask-migrate",
-    "psycopg2==2.7.5",
-    "click",
+    "alembic",
+    "Flask-SQLAlchemy",
+    "psycopg2>=2.8.6",
     "pandas==0.25.2",
     "tqdm",
     "facebook-sdk",
-    "python-dotenv",
 ]
 
 SETUP_REQUIREMENTS = []
 
-TESTS_REQUIREMENTS = ["pytest", "tox" "coverage"]
+TESTS_REQUIREMENTS = []
+
+# TESTS_REQUIREMENTS =read_file("requirements/test.txt")
 
 CLASSIFIERS = [
     # How mature is this project? Common values are
@@ -89,7 +90,7 @@ setup(
     author="Stefan Kasberger",
     author_email="mail@stefankasberger.at",
     name="FHE-Collector",
-    version=find_version("fhe_collector", "__init__.py"),
+    version=find_version("fhe_collector/__init__.py"),
     description="Facebook Hidden Engagement Microservice",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
@@ -99,11 +100,10 @@ setup(
     platforms=["OS Independent"],
     classifiers=CLASSIFIERS,
     install_requires=INSTALL_REQUIREMENTS,
-    packages=find_packages("src"),
-    package_dir={"": "src"},
+    packages=find_packages(),
     setup_requires=SETUP_REQUIREMENTS,
     tests_require=TESTS_REQUIREMENTS,
-    cmdclass={"test": Tox},
+    # cmdclass={"test": Tox},
     include_package_data=True,
     keywords=["fhe_collector", "flask", "facebook", "ncbi", "api", "doi"],
     zip_safe=False,
