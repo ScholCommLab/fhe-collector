@@ -37,37 +37,28 @@ def create_app(test_config=None):
     """Create application and load settings."""
     app = Flask(__name__, instance_relative_config=True)
 
-    if test_config is not None:
-        app.config.update(test_config)
-    else:
-        app.config["FLASK_ENV"] = os.getenv("FLASK_ENV", default=None)
-        app.config["TESTING"] = os.getenv("TESTING", default=None)
+    if "APP_SETTINGS" in os.environ:
         app.config["APP_SETTINGS"] = os.getenv("APP_SETTINGS", default=None)
 
-    app.config.from_json(app.config["APP_SETTINGS"])
-    print("* Settings App: Loaded")
+    # Load test_config dict()
+    if test_config is not None:
+        app.config.update(test_config)
+        print("* Settings create_app() #1: Loaded")
 
+    # Load instance specific default settings and setup instance
     if app.config["TESTING"]:
-        is_travis = os.getenv("TRAVIS", default=False)
-        app.config.from_object("fhe_collector.settings_default.Testing")
-        print("* Settings Testing: Loaded")
-
-        if is_travis:
+        if os.getenv("TRAVIS", default=False):
             app.config.from_object("fhe_collector.settings_default.Travis")
-            print("* Settings Travis: Loaded")
         else:
             create_instance_dir(app.instance_path)
+            app.config.from_object("fhe_collector.settings_default.Testing")
     else:
         if app.config["FLASK_ENV"] == "development":
-            app.config.from_object("fhe_collector.settings_default.Development")
-            print("* Settings Development: Loaded")
             from flask_debugtoolbar import DebugToolbarExtension
 
             DebugToolbarExtension(app)
+            app.config.from_object("fhe_collector.settings_default.Development")
         elif app.config["FLASK_ENV"] == "production":
-            app.config.from_object("fhe_collector.settings_default.Production")
-            print("* Settings Production: Loaded")
-
             # Logging (only production)
             import logging
             from logging.handlers import RotatingFileHandler
@@ -89,6 +80,42 @@ def create_app(test_config=None):
             app.logger.setLevel(logging.INFO)
             app.logger.info("Facebook Hidden Engagement")
 
+            app.config.from_object("fhe_collector.settings_default.Production")
+
+    # Load app settings
+    if "APP_SETTINGS" in os.environ or "APP_SETTINGS" in app.config:
+        app.config.from_json(app.config["APP_SETTINGS"])
+    if "API_TOKEN" in os.environ:
+        app.config["API_TOKEN"] = os.getenv("API_TOKEN", default=None)
+    if "CSV_FILENAME" in os.environ:
+        app.config["CSV_FILENAME"] = os.getenv("CSV_FILENAME", default=None)
+    if "ADMIN_EMAIL" in os.environ:
+        app.config["ADMIN_EMAIL"] = os.getenv("ADMIN_EMAIL", default=None)
+    if "APP_EMAIL" in os.environ:
+        app.config["APP_EMAIL"] = os.getenv("APP_EMAIL", default=None)
+    if "SECRET_KEY" in os.environ:
+        app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default=None)
+    if "NCBI_TOOL" in os.environ:
+        app.config["NCBI_TOOL"] = os.getenv("NCBI_TOOL", default=None)
+    if "FB_APP_ID" in os.environ:
+        app.config["FB_APP_ID"] = os.getenv("FB_APP_ID", default=None)
+    if "FB_APP_SECRET" in os.environ:
+        app.config["FB_APP_SECRET"] = os.getenv("FB_APP_SECRET", default=None)
+    if "FB_HOURLY_RATELIMIT" in os.environ:
+        app.config["FB_HOURLY_RATELIMIT"] = os.getenv(
+            "FB_HOURLY_RATELIMIT", default=None
+        )
+    if "FB_BATCH_SIZE" in os.environ:
+        app.config["FB_BATCH_SIZE"] = os.getenv("FB_BATCH_SIZE", default=None)
+    if "URL_BATCH_SIZE" in os.environ:
+        app.config["URL_BATCH_SIZE"] = os.getenv("URL_BATCH_SIZE", default=None)
+    print("* Settings App: Loaded")
+
+    if test_config is not None:
+        app.config.update(test_config)
+        print("* Settings create_app() #2: Loaded")
+
+    print("* Settings Loading: FINISHED")
     print("* Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
 
     from fhe_collector.database import init_app as db_init_app

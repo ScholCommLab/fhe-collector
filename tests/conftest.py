@@ -21,7 +21,7 @@ def app():
     app = create_app(
         {
             "TESTING": True,
-            "APP_SETTINGS": "settings_testing_localhost.json",
+            "APP_SETTINGS": "settings_development.json",
             "SQLALCHEMY_DATABASE_URI": "postgresql://localhost/fhe_collector_test",
         }
     )

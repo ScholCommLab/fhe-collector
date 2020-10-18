@@ -3,11 +3,10 @@
   "CSV_FILENAME": "",
   "ADMIN_EMAIL": "",
   "APP_EMAIL": "",
-  "SECRET_KEY": "",
   "NCBI_TOOL": "",
   "FB_APP_ID": "",
   "FB_APP_SECRET": "",
-  "FB_HOURLY_RATELIMIT": 200,
-  "FB_BATCH_SIZE": 50,
-  "URL_BATCH_SIZE": 1000
+  "FB_HOURLY_RATELIMIT": 0,
+  "FB_BATCH_SIZE": 0,
+  "URL_BATCH_SIZE": 0
 }

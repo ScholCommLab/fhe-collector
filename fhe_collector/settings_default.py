@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -9,10 +9,8 @@ class Config(object):
     Setting the default environment settings.
     """
 
-    DEBUG = False
-    TESTING = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    load_dotenv()
+    DEBUG = False
 
 
 class Development(Config):
@@ -28,16 +26,16 @@ class Development(Config):
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
     else:
         SQLALCHEMY_DATABASE_URI = "postgresql://localhost/fhe_collector"
+    print("* Settings Development: Loaded")
 
 
 class Testing(Config):
-    TESTING = True
     DEBUG = True
-
     if "SQLALCHEMY_DATABASE_URI" in os.environ:
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
     else:
         SQLALCHEMY_DATABASE_URI = "postgresql://localhost/fhe_collector_test"
+    print("* Settings Testing: Loaded")
 
 
 class Travis(Testing):
@@ -49,14 +47,15 @@ class Travis(Testing):
     # only execute if code is running on travis
     if "TRAVIS" in os.environ:
         TRAVIS = True
-        NCBI_TOOL = os.getenv("NCBI_TOOL")
-        APP_EMAIL = os.getenv("APP_EMAIL")
-        FB_APP_ID = os.getenv("FB_APP_ID")
-        FB_APP_SECRET = os.getenv("FB_APP_SECRET")
-        if "SECRET_KEY" in os.environ:
-            SECRET_KEY = os.getenv("SECRET_KEY")
-        else:
-            print("SECRET_KEY is missing.")
+        # NCBI_TOOL = os.getenv("NCBI_TOOL")
+        # APP_EMAIL = os.getenv("APP_EMAIL")
+        # FB_APP_ID = os.getenv("FB_APP_ID")
+        # FB_APP_SECRET = os.getenv("FB_APP_SECRET")
+        # if "SECRET_KEY" in os.environ:
+        #     SECRET_KEY = os.getenv("SECRET_KEY")
+        # else:
+        #     print("SECRET_KEY is missing.")
+    print("* Settings Travis: Loaded")
 
 
 class Production(Config):
@@ -69,3 +68,4 @@ class Production(Config):
         SQLALCHEMY_DATABASE_URI = os.environ["SQLALCHEMY_DATABASE_URI"]
     else:
         SQLALCHEMY_DATABASE_URI = "postgresql://localhost/fhe_collector"
+    print("* Settings Production: Loaded")
