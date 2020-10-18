@@ -40,6 +40,9 @@ def create_app(test_config=None):
     if "APP_SETTINGS" in os.environ:
         app.config["APP_SETTINGS"] = os.getenv("APP_SETTINGS", default=None)
 
+    if "TESTING" in os.environ:
+        app.config["TESTING"] = os.getenv("TESTING")
+
     # Load test_config dict()
     if test_config is not None:
         app.config.update(test_config)
