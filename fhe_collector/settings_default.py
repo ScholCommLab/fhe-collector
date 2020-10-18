@@ -48,6 +48,9 @@ class Travis(Config):
     # only execute if code is running on travis
     if "TRAVIS" in os.environ:
         TRAVIS = True
+        SQLALCHEMY_DATABASE_URI = (
+            "postgresql+psycopg2://postgres@localhost:5432/fhe_collector_test"
+        )
         # NCBI_TOOL = os.getenv("NCBI_TOOL")
         # APP_EMAIL = os.getenv("APP_EMAIL")
         # FB_APP_ID = os.getenv("FB_APP_ID")

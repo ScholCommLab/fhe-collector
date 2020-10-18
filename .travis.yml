@@ -23,19 +23,15 @@ branches:
     - develop
 
 before_install:
-  - echo $TRAVIS_PYTHON_VERSION
   - export FLASK_ENV=development
 
 services: postgresql
 
 install:
+  - pip install --upgrade pip
   - pip install tox-travis
   - pip install coverage
   - pip install coveralls
-  - virtualenv --version
-  - easy_install --version
-  - pip --version
-  - tox --version
 
 before_script:
   - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe_collector"
