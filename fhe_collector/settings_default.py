@@ -49,7 +49,7 @@ class Travis(Config):
     if "TRAVIS" in os.environ:
         TRAVIS = True
         SQLALCHEMY_DATABASE_URI = (
-            "postgresql+psycopg2://postgres@localhost:5432/fhe_collector_test"
+            "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
         )
         # NCBI_TOOL = os.getenv("NCBI_TOOL")
         # APP_EMAIL = os.getenv("APP_EMAIL")
