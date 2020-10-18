@@ -43,6 +43,7 @@ class Travis(Testing):
     Setting the test environment settings.
     """
 
+    DEBUG = True
     SQLALCHEMY_ECHO = True
     # only execute if code is running on travis
     if "TRAVIS" in os.environ:
