@@ -24,6 +24,8 @@ branches:
 
 before_install:
   - export FLASK_ENV=development
+  - export TRAVIS=true
+  - export FLASK_APP=fhe_collector
 
 services:
   - postgresql
