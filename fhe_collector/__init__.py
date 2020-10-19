@@ -45,6 +45,9 @@ def create_app(test_config=None):
     else:
         app.config["TRAVIS"] = False
 
+    if "API_TOKEN" in os.environ:
+        print(os.getenv("API_TOKEN"))
+
     # Load test_config dict()
     if test_config is not None:
         app.config.update(test_config)
