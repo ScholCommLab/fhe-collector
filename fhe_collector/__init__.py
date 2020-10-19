@@ -11,7 +11,6 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import g
-from flask_debugtoolbar import DebugToolbarExtension
 
 
 __author__ = "Stefan Kasberger"
@@ -61,6 +60,7 @@ def create_app(test_config=None):
             app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
         if app.config["FLASK_ENV"] == "development":
+            from flask_debugtoolbar import DebugToolbarExtension
 
             DebugToolbarExtension(app)
             app.config.from_object("fhe_collector.settings_default.Development")
