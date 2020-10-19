@@ -22,6 +22,8 @@ def test_config_development():
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
+    assert "TRAVIS" in app.config
+    assert not app.config["TRAVIS"]
     assert "DEBUG" in app.config
     assert app.config["DEBUG"]
     assert "secret-dev-key" == app.config["SECRET_KEY"]
@@ -50,6 +52,8 @@ def test_config_development_app_settings():
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
+    assert "TRAVIS" in app.config
+    assert not app.config["TRAVIS"]
     assert "DEBUG" in app.config
     assert app.config["DEBUG"]
     assert "secret-dev-key" == app.config["SECRET_KEY"]
@@ -90,6 +94,8 @@ def test_config_testing():
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config
     assert app.config["TESTING"]
+    assert "TRAVIS" in app.config
+    assert not app.config["TRAVIS"]
     assert app.testing
     assert "DEBUG" in app.config
     assert app.config["DEBUG"]
@@ -136,7 +142,7 @@ def test_config_production():
             "SECRET_KEY": "secret-prod-key",
             "TESTING": False,
             "TRAVIS": False,
-            "DEBUG": False,
+            "FLASK_DEBUG": False,
         }
     )
     assert "FLASK_ENV" in app.config
@@ -144,6 +150,8 @@ def test_config_production():
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
+    assert "TRAVIS" in app.config
+    assert not app.config["TRAVIS"]
     assert "DEBUG" in app.config
     assert not app.config["DEBUG"]
     assert "secret-prod-key" == app.config["SECRET_KEY"]
@@ -152,5 +160,4 @@ def test_config_production():
         "postgresql://localhost/fhe_collector" == app.config["SQLALCHEMY_DATABASE_URI"]
     )
     assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
-    assert "DEBUG_TB_INTERCEPT_REDIRECTS" not in app.config
     assert "fhe_collector" == app.name

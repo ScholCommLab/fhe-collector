@@ -23,7 +23,6 @@ branches:
     - develop
 
 before_install:
-  - export FLASK_ENV=development
 
 services:
   - postgresql
@@ -35,9 +34,9 @@ install:
   - pip install coveralls
 
 before_script:
+  - export FLASK_ENV=development
   - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe_collector"
   - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
-  - export FLASK_DEBUG=1
 
 script:
   - tox
