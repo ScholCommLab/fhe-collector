@@ -58,6 +58,7 @@ def init_app(app):
     app.cli.add_command(fb_command)
     app.cli.add_command(export_command)
     app.cli.add_command(import_command)
+    app.cli.add_command(deploy_command)
 
 
 def close_db(e=None):
@@ -165,6 +166,15 @@ def fb_command():
         current_app.config["FB_APP_SECRET"],
         current_app.config["FB_BATCH_SIZE"],
     )
+
+
+@click.command("deploy")
+@with_appcontext
+def deploy_command():
+    """Run deployment tasks."""
+    # migrate database to latest revision
+    upgrade()
+    # db.create_all()
 
 
 # @app.cli.command()

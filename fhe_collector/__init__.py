@@ -43,6 +43,9 @@ def create_app(test_config=None):
     if "TESTING" in os.environ:
         app.config["TESTING"] = os.getenv("TESTING")
 
+    if "SECRET_KEY" in os.environ:
+        app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
     # Load test_config dict()
     if test_config is not None:
         app.config.update(test_config)
@@ -58,6 +61,9 @@ def create_app(test_config=None):
             create_instance_dir(app.instance_path)
             app.config.from_object("fhe_collector.settings_default.Testing")
     else:
+        if "FLASK_ENV" in os.environ:
+            app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
+
         if app.config["FLASK_ENV"] == "development":
             from flask_debugtoolbar import DebugToolbarExtension
 
