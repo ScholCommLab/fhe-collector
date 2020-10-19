@@ -38,7 +38,6 @@ before_script:
   - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe_collector"
   - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
   - export FLASK_DEBUG=1
-  - export TRAVIS=1
 
 script:
   - tox
