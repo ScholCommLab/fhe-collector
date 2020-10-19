@@ -39,7 +39,7 @@ before_script:
   - export FLASK_DEBUG=1
 
 script:
-  - flask deploy
+  - flask db upgrade
   - tox
 
 after_success:
