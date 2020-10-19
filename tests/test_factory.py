@@ -8,25 +8,7 @@ import pytest
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 
-def reset_environment_variables():
-    if "SQLALCHEMY_DATABASE_URI" in os.environ:
-        del os.environ["SQLALCHEMY_DATABASE_URI"]
-    if "APP_SETTINGS" in os.environ:
-        del os.environ["APP_SETTINGS"]
-    if "DEBUG" in os.environ:
-        del os.environ["DEBUG"]
-    if "DEBUG_TB_INTERCEPT_REDIRECTS" in os.environ:
-        del os.environ["DEBUG_TB_INTERCEPT_REDIRECTS"]
-    if "TESTING" in os.environ:
-        del os.environ["TESTING"]
-    if "TRAVIS" in os.environ:
-        del os.environ["TRAVIS"]
-    if "FLASK_ENV" in os.environ:
-        del os.environ["FLASK_ENV"]
-
-
 def test_config_development():
-    reset_environment_variables()
     app = create_app({"FLASK_ENV": "development", "SECRET_KEY": "secret-dev-key",})
     assert "FLASK_ENV" in app.config
     assert "APP_SETTINGS" not in app.config
@@ -46,7 +28,6 @@ def test_config_development():
 
 
 def test_config_development_app_settings():
-    reset_environment_variables()
     app = create_app(
         {
             "FLASK_ENV": "development",
@@ -93,10 +74,7 @@ def test_config_development_app_settings():
 
 
 def test_config_testing():
-    reset_environment_variables()
-    app = create_app(
-        {"SECRET_KEY": "secret-testing-key", "TESTING": True, "TRAVIS": False}
-    )
+    app = create_app({"SECRET_KEY": "secret-testing-key", "TESTING": True})
     assert "FLASK_ENV" not in app.config
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config
@@ -117,9 +95,9 @@ def test_config_testing():
 
 
 def test_config_testing_travis():
-    reset_environment_variables()
-    os.environ["TRAVIS"] = "true"
-    app = create_app({"SECRET_KEY": "secret-travis-key", "TESTING": True,})
+    app = create_app(
+        {"SECRET_KEY": "secret-travis-key", "TESTING": True, "TRAVIS": True}
+    )
     assert "FLASK_ENV" not in app.config
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config
@@ -141,7 +119,6 @@ def test_config_testing_travis():
 
 
 def test_config_production():
-    reset_environment_variables()
     app = create_app({"FLASK_ENV": "production", "SECRET_KEY": "secret-prod-key",})
     assert "FLASK_ENV" in app.config
     assert "APP_SETTINGS" not in app.config
