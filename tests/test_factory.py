@@ -142,7 +142,7 @@ def test_config_production():
             "SECRET_KEY": "secret-prod-key",
             "TESTING": False,
             "TRAVIS": False,
-            "FLASK_DEBUG": False,
+            "DEBUG": False,
         }
     )
     assert "FLASK_ENV" in app.config
