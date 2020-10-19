@@ -11,6 +11,7 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import g
+from flask_debugtoolbar import DebugToolbarExtension
 
 
 __author__ = "Stefan Kasberger"
@@ -24,13 +25,6 @@ __url__ = "https://github.com/ScholCommLab/fhe-collector"
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 db = SQLAlchemy()
 migrate = Migrate()
-
-
-def create_instance_dir(instance_dir):
-    try:
-        os.makedirs(instance_dir)
-    except OSError:
-        pass
 
 
 def create_app(test_config=None):
@@ -50,22 +44,25 @@ def create_app(test_config=None):
     if test_config is not None:
         app.config.update(test_config)
         print("* Settings create_app() #1: Loaded")
+        print("TESTING" in app.config)
+        print(app.config["TESTING"])
 
     # Load instance specific default settings and setup instance
     if app.config["TESTING"]:
+        print("IN: #1")
         is_travis = os.getenv("TRAVIS", default=False)
         if is_travis:
+            print("IN: #2")
             app.config["TRAVIS"] = is_travis
             app.config.from_object("fhe_collector.settings_default.Travis")
         else:
-            create_instance_dir(app.instance_path)
+            print("IN: #3")
             app.config.from_object("fhe_collector.settings_default.Testing")
     else:
         if "FLASK_ENV" in os.environ:
             app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
 
         if app.config["FLASK_ENV"] == "development":
-            from flask_debugtoolbar import DebugToolbarExtension
 
             DebugToolbarExtension(app)
             app.config.from_object("fhe_collector.settings_default.Development")

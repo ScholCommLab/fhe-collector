@@ -71,7 +71,6 @@ def close_db(e=None):
 def init_db():
     """Clear existing data and create new tables."""
     db = get_db()
-    # upgrade()
     db.create_all()
 
 

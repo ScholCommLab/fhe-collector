@@ -27,7 +27,6 @@ before_install:
 
 services:
   - postgresql
-  - memcached
 
 install:
   - pip install --upgrade pip
