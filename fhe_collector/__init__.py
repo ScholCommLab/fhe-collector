@@ -46,21 +46,12 @@ def create_app(test_config=None):
     if test_config is not None:
         app.config.update(test_config)
         print("* Settings create_app() #1: Loaded")
-    print("TESTING" in app.config)
-    print(app.config["TESTING"])
-    print("TRAVIS" in app.config)
-    print(app.config["TRAVIS"])
-    print("DEBUG" in app.config)
-    print(app.config["DEBUG"])
 
     # Load instance specific default settings and setup instance
     if app.config["TESTING"]:
-        print("IN: #1")
         if app.config["TRAVIS"]:
-            print("IN: #2")
             app.config.from_object("fhe_collector.settings_default.Travis")
         else:
-            print("IN: #3")
             app.config.from_object("fhe_collector.settings_default.Testing")
     else:
         if "FLASK_ENV" in os.environ:
