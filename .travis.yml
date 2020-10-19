@@ -2,10 +2,6 @@ language:        python
 cache:           pip
 dist:            xenial
 
-env:
-  global:
-    - TRAVIS=true
-    
 matrix:
   include:
     - python:    3.4

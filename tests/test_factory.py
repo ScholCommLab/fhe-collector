@@ -9,7 +9,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__fil
 
 
 def test_config_development():
-    app = create_app({"FLASK_ENV": "development", "SECRET_KEY": "secret-dev-key",})
+    app = create_app(
+        {
+            "FLASK_ENV": "development",
+            "SECRET_KEY": "secret-dev-key",
+            "TESTING": False,
+            "TRAVIS": False,
+        }
+    )
     assert "FLASK_ENV" in app.config
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config
@@ -33,6 +40,8 @@ def test_config_development_app_settings():
             "FLASK_ENV": "development",
             "SECRET_KEY": "secret-dev-key",
             "APP_SETTINGS": "settings_testing.json",
+            "TESTING": False,
+            "TRAVIS": False,
         }
     )
     assert "FLASK_ENV" in app.config
@@ -74,7 +83,9 @@ def test_config_development_app_settings():
 
 
 def test_config_testing():
-    app = create_app({"SECRET_KEY": "secret-testing-key", "TESTING": True})
+    app = create_app(
+        {"SECRET_KEY": "secret-testing-key", "TESTING": True, "TRAVIS": False}
+    )
     assert "FLASK_ENV" not in app.config
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config
@@ -119,7 +130,14 @@ def test_config_testing_travis():
 
 
 def test_config_production():
-    app = create_app({"FLASK_ENV": "production", "SECRET_KEY": "secret-prod-key",})
+    app = create_app(
+        {
+            "FLASK_ENV": "production",
+            "SECRET_KEY": "secret-prod-key",
+            "TESTING": False,
+            "TRAVIS": False,
+        }
+    )
     assert "FLASK_ENV" in app.config
     assert "APP_SETTINGS" not in app.config
     assert "TESTING" in app.config

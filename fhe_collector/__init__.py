@@ -45,16 +45,15 @@ def create_app(test_config=None):
     else:
         app.config["TRAVIS"] = False
 
-    if "API_TOKEN" in os.environ:
-        print(os.getenv("API_TOKEN"))
-
     # Load test_config dict()
     if test_config is not None:
         app.config.update(test_config)
         print("* Settings create_app() #1: Loaded")
-        print("TESTING" in app.config)
-        print(app.config["TESTING"])
-        print("TRAVIS" in os.environ)
+    print("TESTING" in app.config)
+    print(app.config["TESTING"])
+    print("TRAVIS" in os.environ)
+    print("DEBUG" in os.environ)
+    print(app.config["DEBUG"])
 
     # Load instance specific default settings and setup instance
     if app.config["TESTING"]:
