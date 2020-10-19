@@ -25,7 +25,9 @@ branches:
 before_install:
   - export FLASK_ENV=development
 
-services: postgresql
+services:
+  - postgresql
+  - memcached
 
 install:
   - pip install --upgrade pip
@@ -39,8 +41,6 @@ before_script:
   - export FLASK_DEBUG=1
 
 script:
-  - python -m flask db upgrade
-  - python -m flask deploy
   - tox
 
 after_success:
