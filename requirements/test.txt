@@ -1,3 +1,4 @@
 # Requirements for tests (pytest)
+-r common.txt
 pytest-flask
 pytest-cov

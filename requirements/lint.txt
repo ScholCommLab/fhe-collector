@@ -1,4 +1,5 @@
 # Requirements for linting tests (tox)
+-r common.txt
 black==19.10b0
 flake8==3.7.4
 flake8-docstrings==1.5.0
