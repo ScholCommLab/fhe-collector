@@ -50,14 +50,6 @@ class Travis(Config):
     SQLALCHEMY_DATABASE_URI = (
         "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
     )
-    # NCBI_TOOL = os.getenv("NCBI_TOOL")
-    # APP_EMAIL = os.getenv("APP_EMAIL")
-    # FB_APP_ID = os.getenv("FB_APP_ID")
-    # FB_APP_SECRET = os.getenv("FB_APP_SECRET")
-    # if "SECRET_KEY" in os.environ:
-    #     SECRET_KEY = os.getenv("SECRET_KEY")
-    # else:
-    #     print("SECRET_KEY is missing.")
     print("* Settings Travis: Loaded")
 
 

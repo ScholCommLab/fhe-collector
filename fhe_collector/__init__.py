@@ -50,7 +50,9 @@ def create_app(test_config=None):
 
     # Load instance specific default settings and setup instance
     if app.config["TESTING"]:
-        if os.getenv("TRAVIS", default=False):
+        is_travis = os.getenv("TRAVIS", default=False)
+        if is_travis:
+            app.config["TRAVIS"] = is_travis
             app.config.from_object("fhe_collector.settings_default.Travis")
         else:
             create_instance_dir(app.instance_path)
