@@ -37,14 +37,6 @@ def create_app(test_config=None):
     if "TESTING" in os.environ:
         app.config["TESTING"] = os.getenv("TESTING")
 
-    if "SECRET_KEY" in os.environ:
-        app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-
-    if "TRAVIS" in os.environ:
-        app.config["TRAVIS"] = os.getenv("TRAVIS")
-    else:
-        app.config["TRAVIS"] = False
-
     # Load test_config dict()
     if test_config is not None:
         app.config.update(test_config)
@@ -58,6 +50,10 @@ def create_app(test_config=None):
     # Load instance specific default settings and setup instance
     if app.config["TESTING"]:
         print("IN: #1")
+        if "TRAVIS" in os.environ:
+            app.config["TRAVIS"] = os.getenv("TRAVIS")
+        else:
+            app.config["TRAVIS"] = False
         if app.config["TRAVIS"]:
             print("IN: #2")
             app.config.from_object("fhe_collector.settings_default.Travis")
@@ -67,6 +63,9 @@ def create_app(test_config=None):
     else:
         if "FLASK_ENV" in os.environ:
             app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
+
+        if "SECRET_KEY" in os.environ:
+            app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
         if app.config["FLASK_ENV"] == "development":
 
