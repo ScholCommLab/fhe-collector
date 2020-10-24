@@ -1,0 +1,17 @@
+version: '3.3'
+services:
+  web:
+    build: .
+    ports:
+      - "8082:80"
+    env_file: .env
+    environment:
+      - FLASK_CONFIG=docker_compose
+    restart: always
+    container_name: fhe_collector
+    depends_on:
+      - db
+  db:
+    image: postgres:10.14
+    restart: always
+    env_file: .env_psql

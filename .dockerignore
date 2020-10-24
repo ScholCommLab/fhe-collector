@@ -1,0 +1,15 @@
+*
+*.*
+tests
+fhe_collector
+FHE_Collector.egg-info
+__pycache__
+docs
+logs
+migrations
+requirements
+venv
+.tox
+.git
+instance
+!instance/settings_docker.json
