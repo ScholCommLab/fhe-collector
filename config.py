@@ -105,6 +105,9 @@ class ProductionConfig(Config):
         import logging
         from logging.handlers import RotatingFileHandler
 
+        if not os.path.exists("logs"):
+            os.mkdir("logs")
+
         file_handler = RotatingFileHandler(
             "logs/fhe.log", maxBytes=10240, backupCount=10
         )
