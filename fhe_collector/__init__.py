@@ -11,6 +11,7 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import g
+from config import config
 
 
 __author__ = "Stefan Kasberger"
@@ -26,103 +27,18 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 
-def create_app(test_config=None):
+def create_app(config_name="default"):
     """Create application and load settings."""
-    app = Flask(__name__, instance_relative_config=True)
+    print("* Start FHE Collector...")
 
-    if "APP_SETTINGS" in os.environ:
-        app.config["APP_SETTINGS"] = os.getenv("APP_SETTINGS", default=None)
+    app = Flask(__name__)
 
-    if "TESTING" in os.environ:
-        app.config["TESTING"] = os.getenv("TESTING")
-
-    if "TRAVIS" in os.environ:
-        app.config["TRAVIS"] = os.getenv("TRAVIS")
-    else:
-        app.config["TRAVIS"] = False
-
-    # Load test_config dict()
-    if test_config is not None:
-        app.config.update(test_config)
-        print("* Settings create_app() #1: Loaded")
-
-    # Load instance specific default settings and setup instance
-    if app.config["TESTING"]:
-        if app.config["TRAVIS"]:
-            app.config.from_object("fhe_collector.settings_default.Travis")
-        else:
-            app.config.from_object("fhe_collector.settings_default.Testing")
-    else:
-        if "FLASK_ENV" in os.environ:
-            app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
-
-        if "SECRET_KEY" in os.environ:
-            app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-
-        if app.config["FLASK_ENV"] == "development":
-            from flask_debugtoolbar import DebugToolbarExtension
-
-            DebugToolbarExtension(app)
-            app.config.from_object("fhe_collector.settings_default.Development")
-        elif app.config["FLASK_ENV"] == "production":
-            # Logging (only production)
-            import logging
-            from logging.handlers import RotatingFileHandler
-
-            if not os.path.exists("logs"):
-                os.mkdir("logs")
-            file_handler = RotatingFileHandler(
-                "logs/fhe.log", maxBytes=10240, backupCount=10
-            )
-
-            file_handler.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
-                )
-            )
-            file_handler.setLevel(logging.INFO)
-            app.logger.addHandler(file_handler)
-
-            app.logger.setLevel(logging.INFO)
-            app.logger.info("Facebook Hidden Engagement")
-
-            app.config.from_object("fhe_collector.settings_default.Production")
-
-    # Load app settings
-    if "APP_SETTINGS" in os.environ or "APP_SETTINGS" in app.config:
-        app.config.from_json(app.config["APP_SETTINGS"])
-    if "API_TOKEN" in os.environ:
-        app.config["API_TOKEN"] = os.getenv("API_TOKEN", default=None)
-    if "CSV_FILENAME" in os.environ:
-        app.config["CSV_FILENAME"] = os.getenv("CSV_FILENAME", default=None)
-    if "ADMIN_EMAIL" in os.environ:
-        app.config["ADMIN_EMAIL"] = os.getenv("ADMIN_EMAIL", default=None)
-    if "APP_EMAIL" in os.environ:
-        app.config["APP_EMAIL"] = os.getenv("APP_EMAIL", default=None)
-    if "SECRET_KEY" in os.environ:
-        app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default=None)
-    if "NCBI_TOOL" in os.environ:
-        app.config["NCBI_TOOL"] = os.getenv("NCBI_TOOL", default=None)
-    if "FB_APP_ID" in os.environ:
-        app.config["FB_APP_ID"] = os.getenv("FB_APP_ID", default=None)
-    if "FB_APP_SECRET" in os.environ:
-        app.config["FB_APP_SECRET"] = os.getenv("FB_APP_SECRET", default=None)
-    if "FB_HOURLY_RATELIMIT" in os.environ:
-        app.config["FB_HOURLY_RATELIMIT"] = os.getenv(
-            "FB_HOURLY_RATELIMIT", default=None
-        )
-    if "FB_BATCH_SIZE" in os.environ:
-        app.config["FB_BATCH_SIZE"] = os.getenv("FB_BATCH_SIZE", default=None)
-    if "URL_BATCH_SIZE" in os.environ:
-        app.config["URL_BATCH_SIZE"] = os.getenv("URL_BATCH_SIZE", default=None)
-    print("* Settings App: Loaded")
-
-    if test_config is not None:
-        app.config.update(test_config)
-        print("* Settings create_app() #2: Loaded")
-
-    print("* Settings Loading: FINISHED")
-    print("* Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
+    app.config.from_object(config[config_name])
+    config[config_name].init_app(app)
+    print(' * Settings "{0}": Loaded'.format(config_name))
+    print(" * Settings Loading: FINISHED")
+    print("   - Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
+    print("   - Environment: " + app.config["FLASK_ENV"])
 
     from fhe_collector.database import init_app as db_init_app
 
@@ -153,4 +69,5 @@ def create_app(test_config=None):
     # scheduler.add_job(, trigger='interval', seconds=rate_intervall)
     # scheduler.start()
 
+    print("* End")
     return app

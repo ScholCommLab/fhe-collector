@@ -60,6 +60,7 @@ INSTALL_REQUIREMENTS = [
     "pandas==0.25.2",
     "tqdm==4.50.2",
     "facebook-sdk==3.1.0",
+    "python-dotenv==0.14.0",
 ]
 
 SETUP_REQUIREMENTS = []

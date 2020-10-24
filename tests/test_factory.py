@@ -9,16 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__fil
 
 
 def test_config_development():
-    app = create_app(
-        {
-            "FLASK_ENV": "development",
-            "SECRET_KEY": "secret-dev-key",
-            "TESTING": False,
-            "TRAVIS": False,
-        }
-    )
-    assert "FLASK_ENV" in app.config
-    assert "APP_SETTINGS" not in app.config
+    app = create_app("development")
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
@@ -26,40 +17,11 @@ def test_config_development():
     assert not app.config["TRAVIS"]
     assert "DEBUG" in app.config
     assert app.config["DEBUG"]
-    assert "secret-dev-key" == app.config["SECRET_KEY"]
+    assert "SECRET_KEY" in app.config
     assert "SQLALCHEMY_DATABASE_URI" in app.config
     assert (
-        "postgresql://localhost/fhe_collector" == app.config["SQLALCHEMY_DATABASE_URI"]
-    )
-    assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
-    assert not app.config["DEBUG_TB_INTERCEPT_REDIRECTS"]
-    assert "fhe_collector" == app.name
-
-
-def test_config_development_app_settings():
-    app = create_app(
-        {
-            "FLASK_ENV": "development",
-            "SECRET_KEY": "secret-dev-key",
-            "APP_SETTINGS": "settings_testing.json",
-            "TESTING": False,
-            "TRAVIS": False,
-        }
-    )
-    assert "FLASK_ENV" in app.config
-    assert "APP_SETTINGS" in app.config
-    assert "settings_testing.json" in app.config["APP_SETTINGS"]
-    assert "TESTING" in app.config
-    assert not app.config["TESTING"]
-    assert not app.testing
-    assert "TRAVIS" in app.config
-    assert not app.config["TRAVIS"]
-    assert "DEBUG" in app.config
-    assert app.config["DEBUG"]
-    assert "secret-dev-key" == app.config["SECRET_KEY"]
-    assert "SQLALCHEMY_DATABASE_URI" in app.config
-    assert (
-        "postgresql://localhost/fhe_collector" == app.config["SQLALCHEMY_DATABASE_URI"]
+        "postgresql://localhost/fhe_collector_dev"
+        == app.config["SQLALCHEMY_DATABASE_URI"]
     )
     assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
     assert not app.config["DEBUG_TB_INTERCEPT_REDIRECTS"]
@@ -84,14 +46,11 @@ def test_config_development_app_settings():
     assert "URL_BATCH_SIZE" in app.config
     assert isinstance(app.config["URL_BATCH_SIZE"], int)
     assert "fhe_collector" == app.name
+    assert "fhe_collector" == app.name
 
 
 def test_config_testing():
-    app = create_app(
-        {"SECRET_KEY": "secret-testing-key", "TESTING": True, "TRAVIS": False}
-    )
-    assert "FLASK_ENV" not in app.config
-    assert "APP_SETTINGS" not in app.config
+    app = create_app("testing")
     assert "TESTING" in app.config
     assert app.config["TESTING"]
     assert "TRAVIS" in app.config
@@ -99,7 +58,7 @@ def test_config_testing():
     assert app.testing
     assert "DEBUG" in app.config
     assert app.config["DEBUG"]
-    assert "secret-testing-key" == app.config["SECRET_KEY"]
+    assert "SECRET_KEY" in app.config
     assert "SQLALCHEMY_DATABASE_URI" in app.config
     assert (
         "postgresql://localhost/fhe_collector_test"
@@ -112,11 +71,7 @@ def test_config_testing():
 
 
 def test_config_testing_travis():
-    app = create_app(
-        {"SECRET_KEY": "secret-travis-key", "TESTING": True, "TRAVIS": True}
-    )
-    assert "FLASK_ENV" not in app.config
-    assert "APP_SETTINGS" not in app.config
+    app = create_app("travis")
     assert "TESTING" in app.config
     assert app.config["TESTING"]
     assert app.testing
@@ -124,7 +79,7 @@ def test_config_testing_travis():
     assert app.config["TRAVIS"]
     assert "DEBUG" in app.config
     assert app.config["DEBUG"]
-    assert "secret-travis-key" == app.config["SECRET_KEY"]
+    assert "SECRET_KEY" in app.config
     assert "SQLALCHEMY_DATABASE_URI" in app.config
     assert (
         "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
@@ -136,17 +91,7 @@ def test_config_testing_travis():
 
 
 def test_config_production():
-    app = create_app(
-        {
-            "FLASK_ENV": "production",
-            "SECRET_KEY": "secret-prod-key",
-            "TESTING": False,
-            "TRAVIS": False,
-            "DEBUG": False,
-        }
-    )
-    assert "FLASK_ENV" in app.config
-    assert "APP_SETTINGS" not in app.config
+    app = create_app("production")
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
@@ -154,7 +99,7 @@ def test_config_production():
     assert not app.config["TRAVIS"]
     assert "DEBUG" in app.config
     assert not app.config["DEBUG"]
-    assert "secret-prod-key" == app.config["SECRET_KEY"]
+    assert "SECRET_KEY" in app.config
     assert "SQLALCHEMY_DATABASE_URI" in app.config
     assert (
         "postgresql://localhost/fhe_collector" == app.config["SQLALCHEMY_DATABASE_URI"]

@@ -18,7 +18,7 @@ def app():
     db_fd, db_path = tempfile.mkstemp()
 
     # create the app with common test config
-    app = create_app({"TESTING": True,})
+    app = create_app("testing")
 
     # create the database and load test data
     with app.app_context():
