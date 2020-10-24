@@ -206,12 +206,6 @@ def read_csv_as_dicts(
     2) A row contains one dataset
     3) A column contains one specific attribute.
 
-    Recommendation: Name the column name the way you want the attribute to be
-    named later in your Dataverse object. See the
-    `pyDataverse templates <https://github.com/AUSSDA/pyDataverse_templates>`_
-    for this. The created :class:`dict` can later be used for the `set()`
-    function to create Dataverse objects.
-
     Parameters
     ----------
     filename : str

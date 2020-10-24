@@ -19,9 +19,9 @@ dist/
 MANIFEST
 
 # Documentation
-/docs
-src/fhe-collector/docs/build
-src/fhe-collector/docs/Makefile
+docs/
+fhe-collector/docs/build
+fhe-collector/docs/Makefile
 
 # Unit test / coverage reports
 .tox
@@ -34,18 +34,15 @@ pip-wheel-metadata
 pytest.ini
 
 # Personal
-.env
-notes*.md
-stash*.*
-setup.sh
 .pypirc
-data/
+.env
+.env_psql
+notes*.md
 dev/
 app/static/import/*
 app/static/export/*
-settings_*.json
-settings_user.py
-snippets.md
+instance/
+intern/
 fhe.log*
 .pytest_cache/
 .cache
@@ -56,9 +53,3 @@ migrations/script.py.mako
 migrations/README
 migrations/env.py
 migrations/alembic.ini
-docs/source/settings_user.rst
-docs/source/settings_development.rst
-docs/source/settings_production.rst
-docs/coverage_html
-docs/coverage_html_report/
-intern/
