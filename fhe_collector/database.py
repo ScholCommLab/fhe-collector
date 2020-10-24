@@ -799,8 +799,7 @@ def get_fb_data(app_id, app_secret, batch_size):
 
     Example Response:
     {'id': 'http://dx.doi.org/10.22230/src.2010v1n2a24',
-    'engagement': { 'share_count': 0, 'comment_plugin_count': 0,
-                    'reaction_count': 0, 'comment_count': 0}}
+    'engagement': { 'share_count': 0, 'comment_plugin_count': 0, 'reaction_count': 0, 'comment_count': 0}}
     """
     db = get_db()
     token = get_GraphAPI_token(app_id, app_secret)

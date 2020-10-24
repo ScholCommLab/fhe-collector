@@ -12,10 +12,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath("../.."))
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath("../../.."))
+
+import fhe_collector
 
 
 # -- Project information -----------------------------------------------------
@@ -23,11 +26,12 @@ sys.path.insert(0, os.path.abspath("../.."))
 project = "FHE Collector"
 copyright = "2018, Public Knowledge Project"
 author = "Public Knowledge Project"
+description = "Facebook Hidden Engagement Microservice"
 
 # The short X.Y version
-version = "0.1"
+version = fhe_collector.__version__
 # The full version, including alpha/beta/rc tags
-release = "0.1"
+release = fhe_collector.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -43,6 +47,10 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -64,6 +72,10 @@ master_doc = "index"
 # Usually you set "language" from the command line for these cases.
 language = None
 
+# If true, the current module name will be prepended to all description
+# unit titles (such as .. function::).
+add_module_names = False
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
@@ -84,7 +96,15 @@ html_theme = "alabaster"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "description": description,
+    "show_powered_by": False,
+    "github_button": True,
+    "github_user": "ScholCommLab",
+    "github_repo": "fhe-collector",
+    "github_banner": False,
+    "travis_button": True,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -105,7 +125,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "fhe_collectordoc"
+htmlhelp_basename = "fhe_collector"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -158,10 +178,16 @@ texinfo_documents = [
         "fhe_collector Documentation",
         author,
         "fhe_collector",
-        "One line description of project.",
+        description,
         "Miscellaneous",
     ),
 ]
 
 
 # -- Extension configuration -------------------------------------------------
+
+# Intersphinx
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
