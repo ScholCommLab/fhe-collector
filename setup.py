@@ -52,14 +52,14 @@ class Tox(TestCommand):
 INSTALL_REQUIREMENTS = [
     # A string or list of strings specifying what other distributions need to
     # be installed when this one is.
-    "flask",
-    "flask-migrate",
-    "alembic",
-    "Flask-SQLAlchemy",
-    "psycopg2>=2.8.6",
+    "Flask==1.1.2",
+    "Flask-Migrate==2.5.3",
+    "alembic==1.4.3",
+    "Flask-SQLAlchemy==2.4.4",
+    "psycopg2==2.8.6",
     "pandas==0.25.2",
-    "tqdm",
-    "facebook-sdk",
+    "tqdm==4.50.2",
+    "facebook-sdk==3.1.0",
 ]
 
 SETUP_REQUIREMENTS = []
