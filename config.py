@@ -11,9 +11,11 @@ class Config(object):
     from dotenv import load_dotenv
 
     load_dotenv()
+    FLASK_ENV = os.environ.get("FLASK_ENV") or "development"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     DEBUG = False
-    FLASK_ENV = os.environ.get("FLASK_ENV") or "production"
+    FLASK_APP = os.environ.get("FLASK_APP") or "fhe_collector"
+    FLASK_ENV = os.environ.get("FLASK_ENV") or "development"
     TESTING = os.environ.get("TESTING") or False
     TRAVIS = os.environ.get("TRAVIS") or False
     API_TOKEN = os.environ.get("API_TOKEN") or None
@@ -61,7 +63,6 @@ class TestingConfig(Config):
         os.environ.get("TEST_DATABASE_URI")
         or "postgresql://localhost/fhe_collector_test"
     )
-
     API_TOKEN = "api-token"
     CSV_FILENAME = "data.csv"
     ADMIN_EMAIL = "admin@fhe.com"
@@ -96,6 +97,7 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get("PROD_DATABASE_URI") or "postgresql://localhost/fhe_collector"
     )
+    FLASK_ENV = os.environ.get("FLASK_ENV") or "production"
 
     @classmethod
     def init_app(cls, app):
