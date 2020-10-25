@@ -32,7 +32,7 @@ install:
   - pip install coveralls
 
 before_script:
-  - export FLASK_ENV=development
+  - export FLASK_CONFIG=travis
   - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe_collector"
   - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
 

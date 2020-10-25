@@ -58,11 +58,11 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    DEBUG = True
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get("TEST_DATABASE_URI")
         or "postgresql://localhost/fhe_collector_test"
     )
+
     API_TOKEN = "api-token"
     CSV_FILENAME = "data.csv"
     ADMIN_EMAIL = "admin@fhe.com"
@@ -75,14 +75,12 @@ class TestingConfig(Config):
     URL_BATCH_SIZE = 500
 
 
-class TravisConfig(Config):
+class TravisConfig(TestingConfig):
     """
     Setting the test environment settings.
     """
 
-    TESTING = True
     TRAVIS = True
-    DEBUG = True
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_DATABASE_URI = (
         "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
