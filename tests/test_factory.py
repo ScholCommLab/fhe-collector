@@ -13,8 +13,7 @@ def test_config_development():
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
-    assert "TRAVIS" in app.config
-    assert not app.config["TRAVIS"]
+    assert "TRAVIS" not in app.config
     assert "DEBUG" in app.config
     assert app.config["DEBUG"]
     assert "SECRET_KEY" in app.config
@@ -53,11 +52,10 @@ def test_config_testing():
     app = create_app("testing")
     assert "TESTING" in app.config
     assert app.config["TESTING"]
-    assert "TRAVIS" in app.config
-    assert not app.config["TRAVIS"]
+    assert "TRAVIS" not in app.config
     assert app.testing
     assert "DEBUG" in app.config
-    assert app.config["DEBUG"]
+    assert False == app.config["DEBUG"]
     assert "SECRET_KEY" in app.config
     assert "SQLALCHEMY_DATABASE_URI" in app.config
     assert (
@@ -78,7 +76,7 @@ def test_config_testing_travis():
     assert "TRAVIS" in app.config
     assert app.config["TRAVIS"]
     assert "DEBUG" in app.config
-    assert app.config["DEBUG"]
+    assert False == app.config["DEBUG"]
     assert "SECRET_KEY" in app.config
     assert "SQLALCHEMY_DATABASE_URI" in app.config
     assert (
@@ -95,8 +93,7 @@ def test_config_production():
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
-    assert "TRAVIS" in app.config
-    assert not app.config["TRAVIS"]
+    assert "TRAVIS" not in app.config
     assert "DEBUG" in app.config
     assert not app.config["DEBUG"]
     assert "SECRET_KEY" in app.config
