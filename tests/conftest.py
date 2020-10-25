@@ -18,7 +18,10 @@ def app():
     db_fd, db_path = tempfile.mkstemp()
 
     # create the app with common test config
-    app = create_app("testing")
+    if os.getenv("TRAVIS") or False:
+        app = create_app("travis")
+    else:
+        app = create_app("testing")
 
     # create the database and load test data
     with app.app_context():
