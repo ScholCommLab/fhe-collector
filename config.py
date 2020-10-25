@@ -11,13 +11,10 @@ class Config(object):
     from dotenv import load_dotenv
 
     load_dotenv()
-    FLASK_ENV = os.environ.get("FLASK_ENV") or "development"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DEBUG = False
     FLASK_APP = os.environ.get("FLASK_APP") or "fhe_collector"
     FLASK_ENV = os.environ.get("FLASK_ENV") or "development"
-    TESTING = os.environ.get("TESTING") or False
-    TRAVIS = os.environ.get("TRAVIS") or False
+    DEBUG = False
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     API_TOKEN = os.environ.get("API_TOKEN") or None
     CSV_FILENAME = os.environ.get("CSV_FILENAME") or None
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL") or None
@@ -41,6 +38,7 @@ class DevelopmentConfig(Config):
     Database is sqlite file or a postgresql database string passed by an environment variable.
     """
 
+    FLASK_ENV = os.environ.get("FLASK_ENV") or "development"
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = (
@@ -57,6 +55,7 @@ class DevelopmentConfig(Config):
 
 
 class TestingConfig(Config):
+    FLASK_ENV = os.environ.get("FLASK_ENV") or "testing"
     TESTING = True
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get("TEST_DATABASE_URI")
