@@ -32,9 +32,9 @@ def create_app(config_name="default"):
     print("* Start FHE Collector...")
 
     app = Flask(__name__)
-
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
+
     print(' * Settings "{0}": Loaded'.format(config_name))
     print(" * Settings Loading: FINISHED")
     print("   - Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
