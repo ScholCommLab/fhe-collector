@@ -90,7 +90,7 @@ setup(
     author="Stefan Kasberger",
     author_email="mail@stefankasberger.at",
     name="FHE-Collector",
-    version=find_version("fhe_collector/__init__.py"),
+    version=find_version("app/__init__.py"),
     description="Facebook Hidden Engagement Microservice",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",

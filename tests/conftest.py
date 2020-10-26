@@ -4,8 +4,8 @@
 import os
 import tempfile
 import pytest
-from fhe_collector.database import init_db
-from fhe_collector import create_app
+from app.database import init_db
+from app import create_app
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))

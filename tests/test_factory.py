@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test factory."""
 import os
-from fhe_collector import create_app
+from app import create_app
 import pytest
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))

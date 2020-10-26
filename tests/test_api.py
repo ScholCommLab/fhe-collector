@@ -16,9 +16,6 @@ def test_homepage_url(client):
     rv = client.get("/api")
     assert 200 == rv.status_code
 
-    rv = client.get("/api/v1")
-    assert 200 == rv.status_code
-
 
 # def test_add_data(client):
 #     """Start with a blank database."""
