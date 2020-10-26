@@ -10,14 +10,15 @@ RUN pip install -r requirements/docker.txt
 RUN cp -r /home/fhe_collector/app .
 RUN cp -r /home/fhe_collector/migrations .
 RUN rm -f main.py
-RUN cp -f /home/fhe_collector/fhe_collector.py main.py
+RUN cp -f /home/fhe_collector/fhe.py .
 RUN cp -f /home/fhe_collector/config.py .
 RUN rm -f prestart.sh
 
 LABEL Version="0.1.0"
-LABEL Description="FHE Collector docker container" License="MIT"
+LABEL Description="FHE Collector docker container"
+LABEL License="MIT"
 LABEL maintainer="Stefan Kasberger <mail@stefankasberger.at>"
 
 # ENV GIT_COMMIT
-ENV FLASK_APP=fhe
 ENV FLASK_CONFIG docker
+ENV MODULE_NAME fhe

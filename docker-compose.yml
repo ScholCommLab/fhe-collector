@@ -7,6 +7,7 @@ services:
     env_file: .env
     environment:
       - FLASK_CONFIG=docker_compose
+      - FLASK_APP=fhe
     restart: always
     container_name: fhe_collector
     depends_on:

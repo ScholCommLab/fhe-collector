@@ -14,7 +14,7 @@ def homepage():
     return jsonify({"status": "on", "api_version": "1.0"})
 
 
-@api.route("/add_data", methods=["POST", "GET"])
+@api.route("/add_data", methods=["POST"])
 def add_data():
     """Add data via an API endpoint to the database.
 
