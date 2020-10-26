@@ -8,7 +8,7 @@ Reference / API
 Api Interface
 -----------------------------
 
-.. automodule:: fhe_collector.api
+.. automodule:: app.api
    :members:
 
 
@@ -17,7 +17,7 @@ Api Interface
 Main Interface
 -----------------------------
 
-.. automodule:: fhe_collector.main
+.. automodule:: app.main
   :members:
 
 
@@ -26,7 +26,7 @@ Main Interface
 Database Interface
 -----------------------------
 
-.. automodule:: fhe_collector.database
+.. automodule:: app.database
   :inherited-members:
 
 
@@ -35,7 +35,7 @@ Database Interface
 Requests Interface
 -----------------------------
 
-.. automodule:: fhe_collector.requests
+.. automodule:: app.requests
   :members:
 
 
@@ -44,7 +44,7 @@ Requests Interface
 Models Interface
 -----------------------------
 
-.. automodule:: fhe_collector.models
+.. automodule:: app.models
   :members:
 
 
@@ -53,7 +53,7 @@ Models Interface
 Utils Interface
 -----------------------------
 
-.. automodule:: fhe_collector.utils
+.. automodule:: app.utils
   :members:
 
 .. _reference tests:

@@ -18,7 +18,7 @@ import os
 
 sys.path.insert(0, os.path.abspath("../../.."))
 
-import fhe_collector
+import app
 
 
 # -- Project information -----------------------------------------------------
@@ -29,9 +29,9 @@ author = "Public Knowledge Project"
 description = "Facebook Hidden Engagement Microservice"
 
 # The short X.Y version
-version = fhe_collector.__version__
+version = app.__version__
 # The full version, including alpha/beta/rc tags
-release = fhe_collector.__version__
+release = app.__version__
 
 
 # -- General configuration ---------------------------------------------------

@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 """ORM Models."""
 from datetime import datetime
-
-from fhe_collector import db
+from . import db
 
 
 class Import(db.Model):

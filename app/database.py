@@ -1,8 +1,8 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Database functions."""
-from fhe_collector.models import Doi, Import, Url, Request, FBRequest
-from fhe_collector.requests import (
+from .models import Doi, Import, Url, Request, FBRequest
+from .requests import (
     request_doi_landingpage,
     request_ncbi_api,
     request_unpaywall_api,
@@ -10,7 +10,7 @@ from fhe_collector.requests import (
     get_GraphAPI_urls,
     get_GraphAPI_token,
 )
-from fhe_collector.utils import is_valid_doi
+from .utils import is_valid_doi
 from pandas import read_csv
 from tqdm import tqdm
 import os
@@ -38,7 +38,7 @@ def get_db():
     again.
     """
     if "db" not in g:
-        from fhe_collector import db
+        from app import db
 
         db.init_app(current_app)
         g.db = db
@@ -49,16 +49,17 @@ def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
     app.cli.add_command(drop_db_command)
-    app.cli.add_command(init_data_command)
+    app.cli.add_command(deploy_command)
+    app.cli.add_command(reset_db_command)
+    app.cli.add_command(import_data_command)
     app.cli.add_command(doi_new_command)
     app.cli.add_command(doi_old_command)
     app.cli.add_command(doi_lp_command)
     app.cli.add_command(ncbi_command)
     app.cli.add_command(unpaywall_command)
     app.cli.add_command(fb_command)
-    app.cli.add_command(export_command)
-    app.cli.add_command(import_command)
-    app.cli.add_command(deploy_command)
+    app.cli.add_command(export_tables_command)
+    app.cli.add_command(import_tables_command)
 
 
 def close_db(e=None):
@@ -69,7 +70,7 @@ def close_db(e=None):
 
 
 def init_db():
-    """Clear existing data and create new tables."""
+    """Conncet to database and create new tables."""
     db = get_db()
     db.create_all()
 
@@ -98,10 +99,26 @@ def drop_db_command():
     click.echo("Dropped all tables in the database.")
 
 
-@click.command("init-data")
+@click.command("deploy")
+@with_appcontext
+def deploy_command():
+    """Run deployment tasks."""
+    upgrade()
+
+
+@click.command("reset-db")
+@with_appcontext
+def reset_db_command():
+    """Delete all entries in all tables."""
+    db = get_db()
+    db.drop_all()
+    db.create_all()
+
+
+@click.command("import-data")
 @click.option("--filename", help="Filename of CSV to be imported.")
 @with_appcontext
-def init_data_command(filename=None):
+def import_data_command(filename=None):
     """Import raw data from csv file.
 
     The filepath can be manually passed with the argument `filename`.
@@ -113,12 +130,10 @@ def init_data_command(filename=None):
         argument via the command line. Relative to root.
 
     """
-    if not filename:
+    if filename is None:
         filename = current_app.config["CSV_FILENAME"]
     batch_size = current_app.config["URL_BATCH_SIZE"]
     import_init_csv(filename, batch_size)
-    create_doi_old_urls(current_app.config["URL_BATCH_SIZE"])
-    create_doi_new_urls(current_app.config["URL_BATCH_SIZE"])
 
 
 @click.command("doi-new")
@@ -167,27 +182,10 @@ def fb_command():
     )
 
 
-@click.command("deploy")
-@with_appcontext
-def deploy_command():
-    """Run deployment tasks."""
-    # migrate database to latest revision
-    upgrade()
-    # db.create_all()
-
-
-# @app.cli.command()
-# def res_tables():
-#     """Delete all entries in all tables."""
-# db = get_db()
-#     db.drop_all()
-#     db.create_all()
-
-
-@click.command("export")
+@click.command("export-tables")
 @with_appcontext
 @click.option("--table_names", required=False)
-def export_command(table_names):
+def export_tables_command(table_names):
     """Export tables passed as string, seperated by comma.
 
     Parameters
@@ -203,11 +201,11 @@ def export_command(table_names):
     export_tables_to_csv(table_names, current_app.config["SQLALCHEMY_DATABASE_URI"])
 
 
-@click.command("import")
+@click.command("import-tables")
 @click.option("--table_names", required=False)
 @click.option("--import_type", required=False)
 @with_appcontext
-def import_command(table_names=False, import_type="append"):
+def import_tables_command(table_names=False, import_type="append"):
     """Import data.
 
     table_names must be passed in the right order.

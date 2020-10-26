@@ -22,7 +22,8 @@ __version__ = "0.1.0"
 __url__ = "https://github.com/ScholCommLab/fhe-collector"
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+
 db = SQLAlchemy()
 migrate = Migrate()
 
@@ -31,43 +32,28 @@ def create_app(config_name="default"):
     """Create application and load settings."""
     print("* Start FHE Collector...")
 
-    app = Flask(__name__)
+    app = Flask("fhe_collector", root_path=ROOT_DIR)
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
 
     print(' * Settings "{0}": Loaded'.format(config_name))
-    print(" * Settings Loading: FINISHED")
-    print("   - Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
-    print("   - Environment: " + app.config["FLASK_ENV"])
+    print(" * Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
+    print(" * Environment: " + app.config["FLASK_ENV"])
 
-    from fhe_collector.database import init_app as db_init_app
+    from app.database import init_app as db_init_app
 
     db_init_app(app)
     db.init_app(app)
 
     migrate.init_app(app, db)
 
-    from fhe_collector.errors import bp as errors_bp
+    from .main import main as main_blueprint
 
-    app.register_blueprint(errors_bp)
+    app.register_blueprint(main_blueprint)
 
-    from fhe_collector.main import bp as main_bp
+    from .api import api as api_blueprint
 
-    app.register_blueprint(main_bp)
-
-    from fhe_collector.api import bp as api_bp
-
-    app.register_blueprint(api_bp)
-
-    @app.shell_context_processor
-    def make_shell_context():
-        return {"db": db, "Doi": Doi, "Url": Url}
-
-    # scheduler = BackgroundScheduler()
-    # rate_limit = app.config['FB_HOURLY_RATELIMIT']
-    # rate_intervall = 3600 / rate_limit
-    # scheduler.add_job(, trigger='interval', seconds=rate_intervall)
-    # scheduler.start()
+    app.register_blueprint(api_blueprint, url_prefix="/api/v1")
 
     print("* End")
     return app
