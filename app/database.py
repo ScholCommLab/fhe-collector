@@ -51,7 +51,7 @@ def init_app(app):
     app.cli.add_command(drop_db_command)
     app.cli.add_command(deploy_command)
     app.cli.add_command(reset_db_command)
-    app.cli.add_command(import_data_command)
+    app.cli.add_command(import_csv_command)
     app.cli.add_command(doi_new_command)
     app.cli.add_command(doi_old_command)
     app.cli.add_command(doi_lp_command)
@@ -115,27 +115,6 @@ def reset_db_command():
     db.create_all()
 
 
-@click.command("import-data")
-@click.option("--filename", help="Filename of CSV to be imported.")
-@with_appcontext
-def import_data_command(filename=None):
-    """Import raw data from csv file.
-
-    The filepath can be manually passed with the argument `filename`.
-
-    Parameters
-    ----------
-    filename : string
-        Relative filepath to the csv file. Defaults to None, if not passed as an
-        argument via the command line. Relative to root.
-
-    """
-    if filename is None:
-        filename = current_app.config["CSV_FILENAME"]
-    batch_size = current_app.config["URL_BATCH_SIZE"]
-    import_init_csv(filename, batch_size)
-
-
 @click.command("doi-new")
 @with_appcontext
 def doi_new_command():
@@ -180,58 +159,6 @@ def fb_command():
         current_app.config["FB_APP_SECRET"],
         current_app.config["FB_BATCH_SIZE"],
     )
-
-
-@click.command("export-tables")
-@with_appcontext
-@click.option("--table_names", required=False)
-def export_tables_command(table_names):
-    """Export tables passed as string, seperated by comma.
-
-    Parameters
-    ----------
-    table_names : string
-        String with table names, seperated by comma.
-
-    """
-    if not table_names:
-        table_names = "import,doi,url,request,fb_request"
-
-    table_names = table_names.split(",")
-    export_tables_to_csv(table_names, current_app.config["SQLALCHEMY_DATABASE_URI"])
-
-
-@click.command("import-tables")
-@click.option("--table_names", required=False)
-@click.option("--import_type", required=False)
-@with_appcontext
-def import_tables_command(table_names=False, import_type="append"):
-    """Import data.
-
-    table_names must be passed in the right order.
-    e.g. 'doi,url,api_request,fb_request'
-
-    Files must be available as:
-        fb_request.csv, api_request.csv, doi.csv, url.csv
-
-    Parameters
-    ----------
-    table_names : string
-        String with table names, seperated by comma.
-
-    """
-    if import_type == "reset":
-        if not table_names or table_names == "":
-            table_names = ["import", "doi", "url", "request", "fb_request"]
-        else:
-            table_names = [table_name.strip() for table_name in table_names.split(",")]
-        import_csv_reset(table_names)
-    elif import_type == "append" or import_type == False or import_type is None:
-        if not table_names or table_names == "":
-            table_names = ["doi", "url", "request", "fb_request"]
-        else:
-            table_names = [table_name.strip() for table_name in table_names.split(",")]
-        import_csv_append(table_names)
 
 
 def add_entries_to_database(data, import_id):
@@ -393,11 +320,28 @@ def import_dois_from_api(data):
         return response
 
 
-def validate_dois(data):
-    lst_dois = []
-    for idx, d in enumerate(data):
-        lst_dois.append((d, is_valid_doi(d["doi"])))
-    return lst_dois
+@click.command("import-csv")
+@click.option("--filename", help="Filename of CSV to be imported.")
+@with_appcontext
+def import_csv_command(filename=None):
+    """Import raw data from csv file.
+
+    The filepath can be manually passed with the argument `filename`.
+
+    Parameters
+    ----------
+    filename : string
+        Relative filepath to the csv file. Defaults to None, if not passed as an
+        argument via the command line. Relative to root.
+
+    """
+    if filename is None:
+        if "CSV_FILENAME" in current_app.config:
+            filename = current_app.config["CSV_FILENAME"]
+        else:
+            print("No CSV filename.")
+    batch_size = current_app.config["URL_BATCH_SIZE"]
+    import_init_csv(filename, batch_size)
 
 
 def import_init_csv(filename, batch_size):
@@ -423,13 +367,15 @@ def import_init_csv(filename, batch_size):
     num_dois_added = 0
     num_urls_added = 0
     dois_added = []
-    url_import_lst = []
-    url_list = []
+    urls_added = []
+    lst_invalid_dois = []
+
     db = get_db()
     filename = "{0}/{1}".format(BASE_DIR, filename)
     df = read_csv(filename, encoding="utf8")
     json_str = df.to_json(orient="records")
     df = df.drop_duplicates(subset="doi")
+    df = df.drop_duplicates(subset="url")
     df = df.fillna(False)
     data = df.to_dict(orient="records")
 
@@ -440,52 +386,75 @@ def import_init_csv(filename, batch_size):
     except:
         print("ERROR: Import() can not be stored in Database.")
 
-    data = validate_dois(data)
+    query_dois = db.session.query(Doi.doi)
+    doi_list = [row[0] for row in query_dois]
+
+    query_urls = db.session.query(Url.url)
+    url_list = [row[0] for row in query_urls]
 
     for i in range(0, len(data), batch_size):
-        for d, is_valid in tqdm(data[i : i + batch_size]):
-            dict_tmp = {}
-            if is_valid:
-                if d["doi"] and d["date"]:
+        dois_added_tmp = []
+        urls_added_tmp = []
+        for d in tqdm(data[i : i + batch_size]):
+            """
+            d = {
+                'url': 'http://www.cjc-online.ca/index.php/journal/article/view/1208',
+                'doi': '10.22230/cjc.2001v26n1a1208',
+                'url_type': 'ojs',
+                'date': '2001-01-01'
+            }
+            """
+            if d["doi"] not in doi_list:
+                if is_valid_doi(d["doi"]):
                     db_doi = None
-                    kwargs = {
-                        "doi": d["doi"],
-                        "date_published": datetime.strptime(d["date"], "%Y-%m-%d"),
-                        "import_id": db_imp.id,
-                        "is_valid": True,
-                    }
-                    try:
-                        db_doi = Doi(**kwargs)
-                        db.session.add(db_doi)
-                        num_dois_added += 1
-                        dois_added.append(d["doi"])
-                    except:
-                        print("ERROR: Can not import Doi {0}.".format(d["doi"]))
+                    if d["doi"] and d["date"]:
+                        kwargs = {
+                            "doi": d["doi"],
+                            "date_published": datetime.strptime(d["date"], "%Y-%m-%d"),
+                            "import_id": db_imp.id,
+                            "is_valid": True,
+                        }
+                        # print(kwargs)
+                        try:
+                            db_doi = Doi(**kwargs)
+                            db.session.add(db_doi)
+                            num_dois_added += 1
+                            dois_added_tmp.append(d["doi"])
+                        except:
+                            print('ERROR: Can not import DOI "{0}"'.format(d["doi"]))
+            else:
+                lst_invalid_dois.append(d["doi"])
+        db.session.commit()
+        dois_added = dois_added + dois_added_tmp
+        doi_list = doi_list + dois_added_tmp
 
-                if d["url"] and d["url_type"] and db_doi:
-                    if d["url"] not in url_list:
+        for d in tqdm(data[i : i + batch_size]):
+            if d["doi"] in dois_added_tmp:
+                if d["url"] not in url_list:
+                    if d["url"] and d["url_type"]:
                         kwargs = {
                             "url": d["url"],
-                            "doi": db_doi.doi,
+                            "doi": d["doi"],
                             "url_type": d["url_type"],
                         }
+                        # print(kwargs)
                         try:
                             db_url = Url(**kwargs)
                             db.session.add(db_url)
                             num_urls_added += 1
+                            urls_added_tmp.append(d["url"])
                         except:
-                            print("ERROR: Can not import Url {0}.".format(d["url"]))
-                else:
-                    print("WARNING: Entry {0} is not valid".format(d["doi"]))
-            else:
-                print("WARNING: DOI {} is not valid.".format(d["doi"]))
+                            print('ERROR: Can not import Url "{0}"'.format(d["url"]))
         db.session.commit()
+        urls_added = urls_added + urls_added_tmp
+        url_list = url_list + urls_added_tmp
     db.session.close()
     print("{0} doi's added to database.".format(num_dois_added))
     print("{0} url's added to database.".format(num_urls_added))
 
     return {
         "dois_added": dois_added,
+        "invalid_dois": lst_invalid_dois,
         "num_dois_added": num_dois_added,
         "num_urls_added": num_urls_added,
     }
@@ -502,21 +471,11 @@ def create_doi_new_urls(batch_size):
     urls_added = []
     db = get_db()
 
-    # get all URL's in the database
-    query = db.session.query(Url.url)
-    for row in query:
-        db_urls.append(row.url)
+    # get all DOIs, where url_doi_new=False
+    query_result = db.session.query(Doi).filter(Doi.url_doi_new == False).all()
 
-    # get doi, url_doi_new=False and url
-    result_join = (
-        db.session.query(Doi)
-        .join(Url)
-        .filter(Doi.doi == Url.doi)
-        .filter(Doi.url_doi_new == False)
-        .all()
-    )
-    for i in range(0, len(result_join), batch_size):
-        for d in result_join[i : i + batch_size]:
+    for i in range(0, len(query_result), batch_size):
+        for d in tqdm(query_result[i : i + batch_size]):
             url = "https://doi.org/{0}".format(d.doi)
             if url not in db_urls and url not in urls_added:
                 kwargs = {"url": url, "doi": d.doi, "url_type": "doi_new"}
@@ -529,7 +488,6 @@ def create_doi_new_urls(batch_size):
                 except:
                     print("WARNING: Url {0} can not be created.".format(url))
         db.session.commit()
-
     db.session.close()
     print("{0} new doi url's added to database.".format(num_urls_added))
 
@@ -545,21 +503,10 @@ def create_doi_old_urls(batch_size):
     urls_added = []
     db = get_db()
 
-    # get all URL's in the database
-    query = db.session.query(Url.url)
-    for row in query:
-        db_urls.append(row.url)
-
-    # get doi, url_doi_old=False and url
-    result_join = (
-        db.session.query(Doi)
-        .join(Url)
-        .filter(Doi.doi == Url.doi)
-        .filter(Doi.url_doi_old == False)
-        .all()
-    )
-    for i in range(0, len(result_join), batch_size):
-        for d in result_join[i : i + batch_size]:
+    # get all DOIs, where url_doi_old=False
+    query_result = db.session.query(Doi).filter(Doi.url_doi_old == False).all()
+    for i in range(0, len(query_result), batch_size):
+        for d in tqdm(query_result[i : i + batch_size]):
             url = "http://dx.doi.org/{0}".format(quote(d.doi))
             if url not in db_urls and url not in urls_added:
                 kwargs = {"url": url, "doi": d.doi, "url_type": "doi_old"}
@@ -572,7 +519,6 @@ def create_doi_old_urls(batch_size):
                 except:
                     print("WARNING: Url {0} can not be created.".format(url))
         db.session.commit()
-
     db.session.close()
     print("{0} old doi url's added to database.".format(num_urls_added))
 
@@ -588,26 +534,15 @@ def create_doi_lp_urls():
     urls_added = []
     db = get_db()
 
-    # get all URL's in the database
-    query = db.session.query(Url.url)
-    for row in query:
-        db_urls.append(row.url)
-
-    # get all DOI's without landing page URL
-    result_join = (
-        db.session.query(Doi)
-        .join(Url)
-        .filter(Doi.doi == Url.doi)
-        .filter(Doi.url_doi_lp == False)
-        .all()
-    )
-    for d in tqdm(result_join):
+    # get all DOIs, where url_doi_lp=False
+    query_result = db.session.query(Doi).filter(Doi.url_doi_lp == False).all()
+    for row in tqdm(query_result):
         # create doi landing page url
-        url = "https://doi.org/{0}".format(quote(d.doi))
+        url = "https://doi.org/{0}".format(quote(row.doi))
         resp = request_doi_landingpage(url)
         resp_url = resp.url
         kwargs = {
-            "doi": d.doi,
+            "doi": row.doi,
             "request_url": url,
             "request_type": "doi_landingpage",
             "response_content": resp.content,
@@ -619,7 +554,7 @@ def create_doi_lp_urls():
         except:
             print("WARNING: Request can not be created.")
         if resp_url not in db_urls and resp_url not in urls_added:
-            kwargs = {"url": resp_url, "doi": d.doi, "url_type": "doi_landingpage"}
+            kwargs = {"url": resp_url, "doi": row.doi, "url_type": "doi_landingpage"}
             db_url = Url(**kwargs)
             d.url_doi_lp = True
             db.session.add(db_url)
@@ -652,28 +587,18 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
     urls_added = []
     db = get_db()
 
-    # get all URL's in the database
-    query = db.session.query(Url.url)
-    for row in query:
-        db_urls.append(row.url)
-
-    result_join = (
-        db.session.query(Doi)
-        .join(Url)
-        .filter(Doi.doi == Url.doi)
-        .filter(Doi.url_pm == False or Doi.url_pmc == False)
-        .all()
-    )
-    for d in tqdm(result_join):
+    # get all DOIs, where url_doi_ncbi=False
+    query_result = db.session.query(Doi).filter(Doi.url_ncbi == False).all()
+    for row in tqdm(query_result):
         # TODO: allows up to 200 ids sent at the same time
         # send request to NCBI API
         url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}".format(
-            quote(d.doi)
+            quote(row.doi)
         )
-        resp = request_ncbi_api(url, ncbi_tool, ncbi_email, d.doi)
+        resp = request_ncbi_api(url, ncbi_tool, ncbi_email, row.doi)
         resp_data = resp.json()
         kwargs = {
-            "doi": d.doi,
+            "doi": row.doi,
             "request_url": url,
             "request_type": "ncbi",
             "response_content": dumps(resp_data),
@@ -683,15 +608,16 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
         db.session.add(db_ncbi)
 
         if "records" in resp_data:
+            row.url_ncbi = True
             # create PMC url
             if "pmcid" in resp_data["records"]:
                 url_pmc = "https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/".format(
                     quote(resp_data["records"]["pmcid"])
                 )
                 if url not in db_urls and url not in urls_added:
-                    kwargs = {"doi": d.doi, "url_type": "pmc"}
+                    kwargs = {"doi": row.doi, "url_type": "pmc"}
                     db_url_pmc = Url(**kwargs)
-                    d.url_pmc = True
+                    row.url_pmc = True
                     db.session.add(db_url_pmc)
                     num_urls_pmc_added += 1
                     urls_added.append(url_pmc)
@@ -701,9 +627,9 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
                     resp_data["records"]["pmid"]
                 )
                 if Url.query.filter_by(url=url_pm).first() is None:
-                    kwargs = {"url": url_pm, "doi": d.doi, "url_type": "pm"}
+                    kwargs = {"url": url_pm, "doi": row.doi, "url_type": "pm"}
                     db_url_pm = Url(**kwargs)
-                    d.url_pm = True
+                    row.url_pm = True
                     db.session.add(db_url_pm)
                     num_urls_pm_added += 1
                     urls_added.append(url_pmc)
@@ -730,33 +656,26 @@ def create_unpaywall_urls(email):
     urls_added = []
     db = get_db()
 
-    # get all URL's in the database
-    query = db.session.query(Url.url)
-    for row in query:
-        db_urls.append(row.url)
+    query_urls = db.session.query(Url.url)
+    db_urls = [row[0] for row in query_urls]
 
-    result_join = (
-        db.session.query(Doi)
-        .join(Url)
-        .filter(Doi.doi == Url.doi)
-        .filter(Doi.url_unpaywall == False)
-        .all()
-    )
-    for d in tqdm(result_join):
+    # get all DOIs, where url_doi_ncbi=False
+    query_doi = db.session.query(Doi).filter(Doi.url_unpaywall == False).all()
+    for row in tqdm(query_doi):
         # send request to Unpaywall API
         url_dict = {}
-        url = "https://api.unpaywall.org/v2/{0}?email={1}".format(quote(d.doi), email)
+        url = "https://api.unpaywall.org/v2/{0}?email={1}".format(quote(row.doi), email)
         resp = request_unpaywall_api(url)
         resp_data = resp.json()
         kwargs = {
-            "doi": d.doi,
+            "doi": row.doi,
             "request_url": url,
             "request_type": "unpaywall",
             "response_content": dumps(resp_data),
             "response_status": resp.status_code,
         }
         db_api = Request(**kwargs)
-        d.url_unpaywall = True
+        row.url_unpaywall = True
         db.session.add(db_api)
         db.session.commit()
 
@@ -780,9 +699,8 @@ def create_unpaywall_urls(email):
         # store URL's in database
         for url_type, url in url_dict.items():
             if url not in db_urls and url not in urls_added:
-                kwargs = {"url": url, "doi": d.doi, "url_type": url_type}
+                kwargs = {"url": url, "doi": row.doi, "url_type": url_type}
                 db_url = Url(**kwargs)
-                d.url_unpaywall = True
                 db.session.add(db_url)
                 num_urls_unpaywall_added += 1
                 urls_added.append(url)
@@ -807,10 +725,9 @@ def get_fb_data(app_id, app_secret, batch_size):
 
     for i in range(0, len(result_url), batch_size):
         batch = result_url[i : i + batch_size]
-        url_list = []
-        for row in batch:
-            url_list.append(row.url)
-        urls_response = get_GraphAPI_urls(fb_graph, url_list)
+        single_request_url_list = [row.url for row in batch]
+
+        urls_response = get_GraphAPI_urls(fb_graph, single_request_url_list)
         for url, response in urls_response.items():
             kwargs = {
                 "url_url": url,
@@ -832,64 +749,23 @@ def get_fb_data(app_id, app_secret, batch_size):
     )
 
 
-def delete_imports():
-    """Delete all import entries."""
-    db = get_db()
-    try:
-        imports_deleted = db.session.query(Import).delete()
-        db.session.commit()
-        print(imports_deleted, "imports deleted from database.")
-    except:
-        db.session.rollback()
-        print("ERROR: Imports can not be deleted from database.")
+@click.command("export-tables")
+@with_appcontext
+@click.option("--table_names", required=False)
+def export_tables_command(table_names):
+    """Export tables passed as string, seperated by comma.
 
+    Parameters
+    ----------
+    table_names : string
+        String with table names, seperated by comma.
 
-def delete_dois():
-    """Delete all doi entries."""
-    db = get_db()
-    try:
-        dois_deleted = db.session.query(Doi).delete()
-        db.session.commit()
-        print(dois_deleted, "doi's deleted from database.")
-    except:
-        db.session.rollback()
-        print("ERROR: Doi's can not be deleted from database.")
+    """
+    if not table_names:
+        table_names = "imports,dois,urls,requests,fbrequests"
 
-
-def delete_urls():
-    """Delete all url entries."""
-    db = get_db()
-    try:
-        urls_deleted = db.session.query(Url).delete()
-        db.session.commit()
-        print(urls_deleted, "url's deleted from database.")
-    except:
-        db.session.rollback()
-        print("ERROR: Url's can not be deleted from database.")
-
-
-def delete_requests():
-    """Delete all api requests."""
-    db = get_db()
-    try:
-        requests_deleted = db.session.query(Request).delete()
-        db.session.commit()
-        print(requests_deleted, "Requests's deleted from database.")
-    except:
-        db.session.rollback()
-        print("ERROR: Requests's can not be deleted from database.")
-
-
-def delete_fbrequests():
-    """Delete all facebook requests."""
-    db = get_db()
-    try:
-        fbrequests_deleted = db.session.query(FBRequest).delete()
-        db.session.commit()
-        print(fbrequests_deleted, "FBRequests's deleted from database.")
-    except:
-        db.session.rollback()
-        print("ERROR: Facebook requests's can not be deleted from database.")
+    table_names = table_names.split(",")
+    export_tables_to_csv(table_names, current_app.config["SQLALCHEMY_DATABASE_URI"])
 
 
 def export_tables_to_csv(table_names, db_uri):
@@ -907,7 +783,7 @@ def export_tables_to_csv(table_names, db_uri):
     cur = con.cursor()
     filename_list = [
         BASE_DIR
-        + "/app/static/export/"
+        + "/data/export/"
         + datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
         + "_"
         + table
@@ -924,26 +800,59 @@ def export_tables_to_csv(table_names, db_uri):
         cur.copy_expert(sql, open(filename, "w"))
 
 
-def import_csv_reset(table_names):
+@click.command("import-tables")
+@click.option("--table_names", required=False)
+@click.option("--import_type", required=False)
+@click.option("--prefix", required=False)
+@with_appcontext
+def import_tables_command(table_names=False, import_type="append", prefix=""):
+    """Import data.
+
+    table_names must be passed in the right order.
+    e.g. 'doi,url,api_request,fb_request'
+
+    Files must be available as:
+        fb_request.csv, api_request.csv, doi.csv, url.csv
+
+    Import_type: append or reset
+
+    Parameters
+    ----------
+    table_names : string
+        String with table names, seperated by comma.
+
+    """
+    if not table_names or table_names == "":
+        table_names = ["imports", "dois", "urls", "requests", "fbrequests"]
+    else:
+        table_names = [table_name.strip() for table_name in table_names.split(",")]
+    if import_type == "reset":
+        import_csv_reset(table_names, prefix)
+    elif import_type == "append" or import_type == False or import_type is None:
+        import_csv_append(table_names, prefix)
+
+
+def import_csv_reset(table_names, prefix):
     """Import data coming from CSV file.
 
     Delete all data in advance and do fresh import.
 
     """
     table2model = {
-        "import": Import,
-        "doi": Doi,
-        "url": Url,
-        "request": Request,
-        "fb_request": FBRequest,
+        "imports": Import,
+        "dois": Doi,
+        "urls": Url,
+        "requests": Request,
+        "fbrequests": FBRequest,
     }
 
     db = get_db()
     db.drop_all()
     db.create_all()
-
+    sleep(5)
+    #
     filename_list = [
-        BASE_DIR + "/app/static/import/" + table + ".csv" for table in table_names
+        BASE_DIR + "/data/import/" + prefix + table + ".csv" for table in table_names
     ]
 
     for idx, filename in enumerate(filename_list):
@@ -951,21 +860,21 @@ def import_csv_reset(table_names):
         df = read_csv(filename, true_values=["t", "true"], false_values=["f", "false"])
 
         for d in df.to_dict(orient="records"):
-            if table_names[idx] == "import":
+            if table_names[idx] == "imports":
                 table = Import(**d)
-            elif table_names[idx] == "doi":
+            elif table_names[idx] == "dois":
                 table = Doi(**d)
-            elif table_names[idx] == "url":
+            elif table_names[idx] == "urls":
                 table = Url(**d)
-            elif table_names[idx] == "request":
+            elif table_names[idx] == "requests":
                 table = Request(**d)
-            elif table_names[idx] == "fb_request":
+            elif table_names[idx] == "fbrequests":
                 table = FBRequest(**d)
             db.session.add(table)
         db.session.commit()
 
 
-def import_csv_append(table_names):
+def import_csv_append(table_names, prefix):
     """Import data coming from CSV file.
 
     Insert all data in advance and do fresh import.
@@ -973,7 +882,7 @@ def import_csv_append(table_names):
     """
     db = get_db()
     for table_name in table_names:
-        filename = BASE_DIR + "/app/static/import/" + table_name + ".csv"
+        filename = BASE_DIR + "/data/import/" + prefix + table_name + ".csv"
         df = read_csv(
             filename,
             encoding="utf8",
@@ -982,8 +891,8 @@ def import_csv_append(table_names):
         )
         data = df.to_dict(orient="records")
 
-        if table_name == "import":
-            print("Import Doi table:")
+        if table_name == "imports":
+            print("Import Import table:")
             imports_added = 0
             try:
                 db_imp = Import(
@@ -993,54 +902,47 @@ def import_csv_append(table_names):
                 db.session.commit()
             except:
                 print("ERROR: Import() can not be stored in Database.")
-            for d in tqdm(data):
-                print(d)
-                result_doi = Doi.query.filter_by(doi=d["doi"]).first()
-                if result_doi is None:
-                    d["import_id"] = db_imp.id
-                    print(d)
-                    db_doi = Doi(**d)
-                    db.session.add(db_doi)
-                    db.session.commit()
-                    dois_added += 1
-            print("{0} doi's added to database.".format(dois_added))
-        elif table_name == "doi":
+        elif table_name == "dois":
             print("Import Doi table:")
             dois_added = 0
+            query_dois = db.session.query(Doi.doi)
+            db_dois = [row[0] for row in query_dois]
             for d in tqdm(data):
-                result_doi = Doi.query.filter_by(doi=d["doi"]).first()
-                if result_doi is None:
+                if d["doi"] not in db_dois:
                     db_doi = Doi(**d)
                     db.session.add(db_doi)
-                    db.session.commit()
                     dois_added += 1
+            db.session.commit()
             print("{0} DOI's added to database.".format(dois_added))
-        elif table_name == "url":
+        elif table_name == "urls":
             print("Import Url table:")
             urls_added = 0
+            query_urls = db.session.query(Url.url)
+            db_urls = [row[0] for row in query_urls]
             for d in tqdm(data):
-                result_url = Url.query.filter_by(url=d["url"]).first()
-                if result_url is None:
+                if d["url"] not in db_urls:
                     db_url = Url(**d)
                     db.session.add(db_url)
-                    db.session.commit()
                     urls_added += 1
+            db.session.commit()
             print("{0} URL's added to database.".format(urls_added))
-        elif table_name == "request":
+        elif table_name == "requests":
             print("Import Requests table:")
             requests_added = 0
             for d in tqdm(data):
+                del d["id"]
                 db_request = Request(**d)
                 db.session.add(db_request)
-                db.session.commit()
                 requests_added += 1
+            db.session.commit()
             print("{0} Requests added to database.".format(requests_added))
-        elif table_name == "fb_request":
+        elif table_name == "fbrequests":
             print("Import FBRequests table:")
             fbrequests_added = 0
             for d in tqdm(data):
+                del d["id"]
                 db_fbrequest = FBRequest(**d)
                 db.session.add(db_fbrequest)
-                db.session.commit()
                 fbrequests_added += 1
+            db.session.commit()
             print("{0} FBRequests added to database.".format(fbrequests_added))

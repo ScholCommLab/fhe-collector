@@ -11,6 +11,7 @@ class Import(db.Model):
     source: '<file FILENAME>', '<uri URI>', 'api'
     """
 
+    __tablename__ = "imports"
     id = db.Column(db.Integer, primary_key=True)
     import_start = db.Column(db.DateTime(), nullable=False)
     import_end = db.Column(db.DateTime())
@@ -46,14 +47,16 @@ class Doi(db.Model):
     date comes as YYYY-MM-DD
     """
 
-    doi = db.Column(db.String(64), primary_key=True, nullable=False)
+    __tablename__ = "dois"
+    doi = db.Column(db.String(64), primary_key=True, nullable=False, index=True)
     date_published = db.Column(db.DateTime())
-    import_id = db.Column(db.Integer, db.ForeignKey("import.id"), nullable=False)
+    import_id = db.Column(db.Integer, db.ForeignKey("imports.id"), nullable=False)
     pmc_id = db.Column(db.String(256))
     pm_id = db.Column(db.String(256))
     url_doi_new = db.Column(db.Boolean, nullable=False)
     url_doi_old = db.Column(db.Boolean, nullable=False)
     url_doi_lp = db.Column(db.Boolean, nullable=False)
+    url_ncbi = db.Column(db.Boolean, nullable=False)
     url_pm = db.Column(db.Boolean, nullable=False)
     url_pmc = db.Column(db.Boolean, nullable=False)
     url_unpaywall = db.Column(db.Boolean, nullable=False)
@@ -69,6 +72,7 @@ class Doi(db.Model):
         url_doi_new=False,
         url_doi_old=False,
         url_doi_lp=False,
+        url_ncbi=False,
         url_pm=False,
         url_pmc=False,
         url_unpaywall=False,
@@ -83,6 +87,7 @@ class Doi(db.Model):
         self.url_doi_new = url_doi_new
         self.url_doi_old = url_doi_old
         self.url_doi_lp = url_doi_lp
+        self.url_ncbi = url_ncbi
         self.url_pm = url_pm
         self.url_pmc = url_pmc
         self.url_unpaywall = url_unpaywall
@@ -100,8 +105,9 @@ class Url(db.Model):
                 'unpaywall', 'pm', 'pmc'
     """
 
-    url = db.Column(db.String(512), primary_key=True)
-    doi = db.Column(db.String(64), db.ForeignKey("doi.doi"), nullable=False)
+    __tablename__ = "urls"
+    url = db.Column(db.String(512), primary_key=True, index=True)
+    doi = db.Column(db.String(64), db.ForeignKey("dois.doi"), nullable=False)
     url_type = db.Column(db.String(32))
     date_added = db.Column(db.DateTime(), nullable=False)
 
@@ -123,25 +129,18 @@ class Url(db.Model):
 class Request(db.Model):
     """NCBIRequest model."""
 
+    __tablename__ = "requests"
     id = db.Column(db.Integer, primary_key=True)
-    doi = db.Column(db.String(64), db.ForeignKey("doi.doi"), nullable=False)
+    doi = db.Column(db.String(64), db.ForeignKey("dois.doi"), nullable=False)
     request_url = db.Column(db.String(512))
     request_type = db.Column(db.String(32))
     response_content = db.Column(db.Text())
     response_status = db.Column(db.String(32))
 
     def __init__(
-        self,
-        doi,
-        request_url,
-        request_type,
-        response_content,
-        response_status,
-        id=False,
+        self, doi, request_url, request_type, response_content, response_status,
     ):
         """Init APIRequest."""
-        if id:
-            self.id = id
         self.doi = doi
         self.request_url = request_url
         self.request_type = request_type
@@ -156,8 +155,9 @@ class Request(db.Model):
 class FBRequest(db.Model):
     """FBRequest model."""
 
+    __tablename__ = "fbrequests"
     id = db.Column(db.Integer, primary_key=True)
-    url_url = db.Column(db.String(512), db.ForeignKey("url.url"), nullable=False)
+    url_url = db.Column(db.String(512), db.ForeignKey("urls.url"), nullable=False)
     response = db.Column(db.Text())
     reactions = db.Column(db.Integer)
     shares = db.Column(db.Integer)

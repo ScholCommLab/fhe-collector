@@ -55,5 +55,4 @@ def create_app(config_name="default"):
 
     app.register_blueprint(api_blueprint, url_prefix="/api/v1")
 
-    print("* End")
     return app

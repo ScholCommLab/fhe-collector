@@ -19,7 +19,7 @@ class Config(object):
     CSV_FILENAME = os.environ.get("CSV_FILENAME") or None
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL") or None
     APP_EMAIL = os.environ.get("APP_EMAIL") or None
-    SECRET_KEY = os.environ.get("SECRET_KEY") or None
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "you-cant-get-no-secret-key-no"
     NCBI_TOOL = os.environ.get("NCBI_TOOL") or None
     FB_APP_ID = os.environ.get("FB_APP_ID") or None
     FB_APP_SECRET = os.environ.get("FB_APP_SECRET") or None
