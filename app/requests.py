@@ -6,14 +6,18 @@ from requests import get, post
 from requests.exceptions import RequestException
 from datetime import datetime
 from json import loads
+from requests.packages.urllib3 import disable_warnings
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+disable_warnings(InsecureRequestWarning)
 
 
 def request_doi_landingpage(url):
     # TODO: Fix allow_redirects -> kwargs, params
-    return get(url, allow_redirects=True)
+    return get(url, allow_redirects=True, verify=False)
 
 
-def request_ncbi_api(url, ncbi_tool, ncbi_email, doi):
+def request_ncbi_api(url, ncbi_tool, ncbi_email):
     resp = get(
         url,
         params={

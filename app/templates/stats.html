@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Facebook Hidden Engagement Collector{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block header %}
+<h1 class="text-center">Home</h1>
+{% endblock %}
+
+{% block content %}
+<div class="">
+  <table>
+    <tr>
+      <th>Tables/Data</th>
+      <th>num</th>
+      <th>doi new</th>
+      <th>doi old</th>
+      <th>doi lp</th>
+      <th>ncbi</th>
+      <th>pm</th>
+      <th>pmc</th>
+      <th>unpaywall</th>
+    </tr>
+    <tr>
+      <td>Imports</td>
+      <td>{{ data.imports }}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Dois (open)</td>
+      <td>{{ data.dois.num }}</td>
+      <td>{{ data.dois.new }}</td>
+      <td>{{ data.dois.old }}</td>
+      <td>{{ data.dois.lp }}</td>
+      <td>{{ data.dois.ncbi }}</td>
+      <td>{{ data.dois.pmc }}</td>
+      <td>{{ data.dois.pmc }}</td>
+      <td>{{ data.dois.unpaywall }}</td>
+    </tr>
+    <tr>
+      <td>URLs</td>
+      <td>{{ data.urls.num }}</td>
+      <td>{{ data.urls.new }}</td>
+      <td>{{ data.urls.old }}</td>
+      <td>{{ data.urls.lp }}</td>
+      <td></td>
+      <td>{{ data.urls.pm }}</td>
+      <td>{{ data.urls.pmc }}</td>
+      <td>{{ data.urls.unpaywall }}</td>
+    </tr>
+    <tr>
+      <td>Requests</td>
+      <td>{{ data.requests.num }}</td>
+      <td></td>
+      <td></td>
+      <td>{{ data.requests.lp }}</td>
+      <td>{{ data.requests.ncbi }}</td>
+      <td></td>
+      <td></td>
+      <td>{{ data.requests.unpaywall }}</td>
+    </tr>
+    <tr>
+      <td>FB Requests</td>
+      <td>{{ data.fbrequests }}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </table>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

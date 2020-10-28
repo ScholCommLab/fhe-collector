@@ -48,7 +48,7 @@ class Doi(db.Model):
     """
 
     __tablename__ = "dois"
-    doi = db.Column(db.String(64), primary_key=True, nullable=False, index=True)
+    doi = db.Column(db.String(128), primary_key=True, nullable=False, index=True)
     date_published = db.Column(db.DateTime())
     import_id = db.Column(db.Integer, db.ForeignKey("imports.id"), nullable=False)
     pmc_id = db.Column(db.String(256))

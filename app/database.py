@@ -467,21 +467,24 @@ def create_doi_new_urls(batch_size):
 
     """
     num_urls_added = 0
-    db_urls = []
     urls_added = []
     db = get_db()
 
+    query_urls = db.session.query(Url.url)
+    url_list = [row[0] for row in query_urls]
+
     # get all DOIs, where url_doi_new=False
     query_result = db.session.query(Doi).filter(Doi.url_doi_new == False).all()
+    print("Found DOI's to be processed: {0}".format(len(query_result)))
 
     for i in range(0, len(query_result), batch_size):
-        for d in tqdm(query_result[i : i + batch_size]):
-            url = "https://doi.org/{0}".format(d.doi)
-            if url not in db_urls and url not in urls_added:
-                kwargs = {"url": url, "doi": d.doi, "url_type": "doi_new"}
+        for row in tqdm(query_result[i : i + batch_size]):
+            url = "https://doi.org/{0}".format(row.doi)
+            if url not in url_list and url not in urls_added:
+                kwargs = {"url": url, "doi": row.doi, "url_type": "doi_new"}
                 try:
                     db_url = Url(**kwargs)
-                    d.url_doi_new = True
+                    row.url_doi_new = True
                     db.session.add(db_url)
                     num_urls_added += 1
                     urls_added.append(url)
@@ -499,16 +502,21 @@ def create_doi_old_urls(batch_size):
 
     """
     num_urls_added = 0
-    db_urls = []
     urls_added = []
+
     db = get_db()
+
+    query_urls = db.session.query(Url.url)
+    url_list = [row[0] for row in query_urls]
 
     # get all DOIs, where url_doi_old=False
     query_result = db.session.query(Doi).filter(Doi.url_doi_old == False).all()
+    print("Found DOI's to be processed: {0}".format(len(query_result)))
+
     for i in range(0, len(query_result), batch_size):
         for d in tqdm(query_result[i : i + batch_size]):
             url = "http://dx.doi.org/{0}".format(quote(d.doi))
-            if url not in db_urls and url not in urls_added:
+            if url not in url_list and url not in urls_added:
                 kwargs = {"url": url, "doi": d.doi, "url_type": "doi_old"}
                 try:
                     db_url = Url(**kwargs)
@@ -534,34 +542,53 @@ def create_doi_lp_urls():
     urls_added = []
     db = get_db()
 
+    query_urls = db.session.query(Url.url)
+    url_list = [row[0] for row in query_urls]
+
     # get all DOIs, where url_doi_lp=False
     query_result = db.session.query(Doi).filter(Doi.url_doi_lp == False).all()
-    for row in tqdm(query_result):
-        # create doi landing page url
-        url = "https://doi.org/{0}".format(quote(row.doi))
-        resp = request_doi_landingpage(url)
-        resp_url = resp.url
-        kwargs = {
-            "doi": row.doi,
-            "request_url": url,
-            "request_type": "doi_landingpage",
-            "response_content": resp.content,
-            "response_status": resp.status_code,
-        }
-        try:
-            db_api = Request(**kwargs)
-            db.session.add(db_api)
-        except:
-            print("WARNING: Request can not be created.")
-        if resp_url not in db_urls and resp_url not in urls_added:
-            kwargs = {"url": resp_url, "doi": row.doi, "url_type": "doi_landingpage"}
-            db_url = Url(**kwargs)
-            d.url_doi_lp = True
-            db.session.add(db_url)
-            num_urls_added += 1
-            urls_added.append(resp_url)
-        db.session.commit()
+    print("Found DOI's to be processed: {0}".format(len(query_result)))
 
+    batch_size = 100
+    for i in range(0, len(query_result), batch_size):
+        for row in tqdm(query_result[i : i + batch_size]):
+            # create doi landing page url
+            url = "https://doi.org/{0}".format(quote(row.doi))
+            if url not in url_list:
+                if url not in urls_added:
+                    resp = request_doi_landingpage(url)
+                    resp_url = resp.url
+                    kwargs = {
+                        "doi": row.doi,
+                        "request_url": url,
+                        "request_type": "doi_landingpage",
+                        "response_content": resp.content,
+                        "response_status": resp.status_code,
+                    }
+                    try:
+                        db_api = Request(**kwargs)
+                        db.session.add(db_api)
+                    except:
+                        print("ERROR: Request can not be created.")
+                    if resp_url not in url_list + urls_added:
+                        kwargs = {
+                            "url": resp_url,
+                            "doi": row.doi,
+                            "url_type": "doi_landingpage",
+                        }
+                        try:
+                            db_url = Url(**kwargs)
+                            row.url_doi_lp = True
+                            db.session.add(db_url)
+                            num_urls_added += 1
+                            urls_added.append(resp_url)
+                        except:
+                            print(
+                                'ERROR: Url "{0}" can not be created.'.format(resp_url)
+                            )
+            else:
+                row.url_doi_lp = True
+        db.session.commit()
     db.session.close()
     print(
         "{0} doi new landing page doi url's added to database.".format(num_urls_added)
@@ -573,6 +600,9 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
 
     https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
 
+    API allows up to 200 ids sent at the same time.
+    dois seperated with comma.
+
     Parameters
     ----------
     ncbi_tool : string
@@ -583,58 +613,82 @@ def create_ncbi_urls(ncbi_tool, ncbi_email):
     """
     num_urls_pm_added = 0
     num_urls_pmc_added = 0
-    db_urls = []
     urls_added = []
     db = get_db()
 
+    query_urls = db.session.query(Url.url)
+    url_list = [row[0] for row in query_urls]
+
     # get all DOIs, where url_doi_ncbi=False
     query_result = db.session.query(Doi).filter(Doi.url_ncbi == False).all()
-    for row in tqdm(query_result):
-        # TODO: allows up to 200 ids sent at the same time
+
+    # url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids="
+    # # doi1 = "10.22230/cjc.2001v26n1a1208"
+    # # doi2 = "10.22230/cjc.2013v38n1a2578"
+    # doi1 = "10.1371/journal.pone.0149989"
+    # doi2 = "10.1371/journal.pone.0141854"
+    # url = url + quote(doi1) + "," + quote(doi2)
+    # resp = request_ncbi_api(url, ncbi_tool, ncbi_email)
+    # resp_data = resp.json()
+    # print(resp_data)
+
+    batch_size = 200
+    for i in range(0, len(query_result), batch_size):
+        url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids="
+        dois_requested = {}
+        for row in tqdm(query_result[i : i + batch_size]):
+            url += quote(row.doi) + ","
+            dois_requested[row.doi] = row
+
         # send request to NCBI API
-        url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={0}".format(
-            quote(row.doi)
-        )
-        resp = request_ncbi_api(url, ncbi_tool, ncbi_email, row.doi)
+        url = url[:-1]
+        resp = request_ncbi_api(url, ncbi_tool, ncbi_email)
         resp_data = resp.json()
-        kwargs = {
-            "doi": row.doi,
-            "request_url": url,
-            "request_type": "ncbi",
-            "response_content": dumps(resp_data),
-            "response_status": resp.status_code,
-        }
-        db_ncbi = Request(**kwargs)
-        db.session.add(db_ncbi)
+        for doi, row in dois_requested.items():
+            kwargs = {
+                "doi": doi,
+                "request_url": url[:512],
+                "request_type": "ncbi",
+                "response_content": dumps(resp_data),
+                "response_status": resp.status_code,
+            }
+            try:
+                db_ncbi = Request(**kwargs)
+                db.session.add(db_ncbi)
+                row.url_ncbi = True
+            except:
+                print("WARNING: Can not store Request.")
 
         if "records" in resp_data:
-            row.url_ncbi = True
-            # create PMC url
-            if "pmcid" in resp_data["records"]:
-                url_pmc = "https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/".format(
-                    quote(resp_data["records"]["pmcid"])
-                )
-                if url not in db_urls and url not in urls_added:
-                    kwargs = {"doi": row.doi, "url_type": "pmc"}
-                    db_url_pmc = Url(**kwargs)
-                    row.url_pmc = True
-                    db.session.add(db_url_pmc)
-                    num_urls_pmc_added += 1
-                    urls_added.append(url_pmc)
-            # create PM url
-            if "pmid" in resp_data["records"]:
-                url_pm = "https://www.ncbi.nlm.nih.gov/pubmed/{0}".format(
-                    resp_data["records"]["pmid"]
-                )
-                if Url.query.filter_by(url=url_pm).first() is None:
-                    kwargs = {"url": url_pm, "doi": row.doi, "url_type": "pm"}
-                    db_url_pm = Url(**kwargs)
-                    row.url_pm = True
-                    db.session.add(db_url_pm)
-                    num_urls_pm_added += 1
-                    urls_added.append(url_pmc)
-        db.session.commit()
+            for rec in resp_data["records"]:
+                # create PMC url
+                if "pmcid" in rec:
+                    url_pmc = "https://ncbi.nlm.nih.gov/pmc/articles/PMC{0}/".format(
+                        quote(rec["pmcid"])
+                    )
+                    if url_pmc not in url_list and url_pmc not in urls_added:
+                        kwargs = {"url": url_pmc, "doi": rec["doi"], "url_type": "pmc"}
+                        db_url_pmc = Url(**kwargs)
+                        db.session.add(db_url_pmc)
+                        num_urls_pmc_added += 1
+                        urls_added.append(url_pmc)
+                        if rec["doi"] in dois_requested:
+                            dois_requested[rec["doi"]].url_pmc = True
+                # create PM url
+                if "pmid" in rec:
+                    url_pm = "https://www.ncbi.nlm.nih.gov/pubmed/{0}".format(
+                        rec["pmid"]
+                    )
+                    if url_pm not in url_list and url_pm not in urls_added:
+                        kwargs = {"url": url_pm, "doi": rec["doi"], "url_type": "pm"}
+                        db_url_pm = Url(**kwargs)
+                        db.session.add(db_url_pm)
+                        num_urls_pm_added += 1
+                        urls_added.append(url_pm)
+                        if rec["doi"] in dois_requested:
+                            dois_requested[rec["doi"]].url_pm = True
 
+        db.session.commit()
     db.session.close()
     print("{0} PM url's added to database.".format(num_urls_pm_added))
     print("{0} PMC url's added to database.".format(num_urls_pmc_added))
