@@ -1,8 +1,26 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Database functions."""
-from .models import Doi, Import, Url, Request, FBRequest
-from .requests import (
+import click
+from datetime import datetime
+from flask import current_app, Flask, g
+from flask.cli import with_appcontext
+from json import loads, dumps
+import os
+from pandas import read_csv
+from psycopg2 import connect
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.query import Query
+from tqdm import tqdm
+
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urlparse import quote
+
+from app.config import get_config_name, get_config
+from app.models import Doi, Import, Url, Request, FBRequest
+from app.requests import (
     request_doi_landingpage,
     request_ncbi_api,
     request_unpaywall_api,
@@ -10,42 +28,21 @@ from .requests import (
     get_GraphAPI_urls,
     get_GraphAPI_token,
 )
-from .utils import is_valid_doi
-from pandas import read_csv
-from tqdm import tqdm
-import os
-from json import loads, dumps
-from datetime import datetime
-from psycopg2 import connect
-from flask import g
-from flask import current_app
-from flask.cli import with_appcontext
-import click
-from flask_migrate import Migrate
-from flask_migrate import upgrade
-
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urlparse import quote
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+from app.utils import is_valid_doi
+from app.models import db, Table2Model
 
 
-def get_db():
+def get_db() -> Session:
     """Connect to the application's configured database. The connection
     is unique for each request and will be reused if this is called
     again.
     """
     if "db" not in g:
-        from app import db
-
-        db.init_app(current_app)
         g.db = db
     return g.db
 
 
-def init_app(app):
+def init_app(app: Flask) -> None:
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
     app.cli.add_command(drop_db_command)
@@ -59,109 +56,27 @@ def init_app(app):
     app.cli.add_command(unpaywall_command)
     app.cli.add_command(fb_command)
     app.cli.add_command(export_tables_command)
-    app.cli.add_command(import_tables_command)
 
 
-def close_db(e=None):
+def close_db(e=None) -> None:
     """If this request connected to the database, close the
     connection.
     """
-    db = g.pop("db", None)
+    g.pop("db", None)
 
 
-def init_db():
+def init_db(config_name: str = None) -> None:
     """Conncet to database and create new tables."""
     db = get_db()
     db.create_all()
 
 
-@click.command("init-db")
-@with_appcontext
-def init_db_command():
-    """Clear existing data and create new tables."""
-    init_db()
-    click.echo("Initialized the database.")
-
-
-@with_appcontext
-def drop_db():
-    """Clear existing data and create new tables."""
-    with current_app.app_context():
-        db = get_db()
-        db.drop_all(app=current_app)
-
-
-@click.command("drop-db")
-@with_appcontext
-def drop_db_command():
-    """Clear existing data and create new tables."""
-    drop_db()
-    click.echo("Dropped all tables in the database.")
-
-
-@click.command("deploy")
-@with_appcontext
-def deploy_command():
-    """Run deployment tasks."""
-    upgrade()
-
-
-@click.command("reset-db")
-@with_appcontext
-def reset_db_command():
-    """Delete all entries in all tables."""
+def drop_db(config_name: str = None):
     db = get_db()
     db.drop_all()
-    db.create_all()
 
 
-@click.command("doi-new")
-@with_appcontext
-def doi_new_command():
-    """Create the new doi URL's."""
-    create_doi_new_urls(current_app.config["URL_BATCH_SIZE"])
-
-
-@click.command("doi-old")
-@with_appcontext
-def doi_old_command():
-    """Create the old doi URL's."""
-    create_doi_old_urls(current_app.config["URL_BATCH_SIZE"])
-
-
-@click.command("doi-lp")
-@with_appcontext
-def doi_lp_command():
-    """Create the doi landing page URL's."""
-    create_doi_lp_urls()
-
-
-@click.command("ncbi")
-@with_appcontext
-def ncbi_command():
-    """Create the NCBI URL's."""
-    create_ncbi_urls(current_app.config["NCBI_TOOL"], current_app.config["APP_EMAIL"])
-
-
-@click.command("unpaywall")
-@with_appcontext
-def unpaywall_command():
-    """Create the Unpaywall URL's."""
-    create_unpaywall_urls(current_app.config["APP_EMAIL"])
-
-
-@click.command("fb")
-@with_appcontext
-def fb_command():
-    """Create the Facebook request."""
-    get_fb_data(
-        current_app.config["FB_APP_ID"],
-        current_app.config["FB_APP_SECRET"],
-        current_app.config["FB_BATCH_SIZE"],
-    )
-
-
-def add_entries_to_database(data, import_id):
+def add_entries_to_database(data: list, import_id: str) -> dict:
     """Store data to table Doi and Url.
 
     Parameters
@@ -291,7 +206,7 @@ def add_entries_to_database(data, import_id):
     }
 
 
-def import_dois_from_api(data):
+def import_dois_from_api(data: dict) -> Query:
     """Import data coming from the API endpoint.
 
     Parameters
@@ -318,30 +233,6 @@ def import_dois_from_api(data):
         response = "ERROR: Data import from API not working."
         print(response)
         return response
-
-
-@click.command("import-csv")
-@click.option("--filename", help="Filename of CSV to be imported.")
-@with_appcontext
-def import_csv_command(filename=None):
-    """Import raw data from csv file.
-
-    The filepath can be manually passed with the argument `filename`.
-
-    Parameters
-    ----------
-    filename : string
-        Relative filepath to the csv file. Defaults to None, if not passed as an
-        argument via the command line. Relative to root.
-
-    """
-    if filename is None:
-        if "CSV_FILENAME" in current_app.config:
-            filename = current_app.config["CSV_FILENAME"]
-        else:
-            print("No CSV filename.")
-    batch_size = current_app.config["URL_BATCH_SIZE"]
-    import_init_csv(filename, batch_size)
 
 
 def import_init_csv(filename, batch_size):
@@ -371,7 +262,7 @@ def import_init_csv(filename, batch_size):
     lst_invalid_dois = []
 
     db = get_db()
-    filename = "{0}/{1}".format(BASE_DIR, filename)
+    filename = "{0}/{1}".format(filename)
     df = read_csv(filename, encoding="utf8")
     json_str = df.to_json(orient="records")
     df = df.drop_duplicates(subset="doi")
@@ -469,12 +360,15 @@ def create_doi_new_urls(batch_size):
     num_urls_added = 0
     urls_added = []
     db = get_db()
+    config_name = get_config_name()
+    config = get_config(config_name)
+    batch_size = config.URL_BATCH_SIZE
 
-    query_urls = db.session.query(Url.url)
+    query_urls = db.query(Url.url)
     url_list = [row[0] for row in query_urls]
 
     # get all DOIs, where url_doi_new=False
-    query_result = db.session.query(Doi).filter(Doi.url_doi_new == False).all()
+    query_result = db.query(Doi).filter(Doi.url_doi_new == False).all()
     print("Found DOI's to be processed: {0}".format(len(query_result)))
 
     for i in range(0, len(query_result), batch_size):
@@ -485,13 +379,13 @@ def create_doi_new_urls(batch_size):
                 try:
                     db_url = Url(**kwargs)
                     row.url_doi_new = True
-                    db.session.add(db_url)
+                    db.add(db_url)
                     num_urls_added += 1
                     urls_added.append(url)
                 except:
                     print("WARNING: Url {0} can not be created.".format(url))
-        db.session.commit()
-    db.session.close()
+        db.commit()
+    db.close()
     print("{0} new doi url's added to database.".format(num_urls_added))
 
 
@@ -521,13 +415,13 @@ def create_doi_old_urls(batch_size):
                 try:
                     db_url = Url(**kwargs)
                     d.url_doi_old = True
-                    db.session.add(db_url)
+                    db.add(db_url)
                     num_urls_added += 1
                     urls_added.append(url)
                 except:
                     print("WARNING: Url {0} can not be created.".format(url))
-        db.session.commit()
-    db.session.close()
+        db.commit()
+    db.close()
     print("{0} old doi url's added to database.".format(num_urls_added))
 
 
@@ -803,25 +697,6 @@ def get_fb_data(app_id, app_secret, batch_size):
     )
 
 
-@click.command("export-tables")
-@with_appcontext
-@click.option("--table_names", required=False)
-def export_tables_command(table_names):
-    """Export tables passed as string, seperated by comma.
-
-    Parameters
-    ----------
-    table_names : string
-        String with table names, seperated by comma.
-
-    """
-    if not table_names:
-        table_names = "imports,dois,urls,requests,fbrequests"
-
-    table_names = table_names.split(",")
-    export_tables_to_csv(table_names, current_app.config["SQLALCHEMY_DATABASE_URI"])
-
-
 def export_tables_to_csv(table_names, db_uri):
     """Short summary.
 
@@ -836,8 +711,7 @@ def export_tables_to_csv(table_names, db_uri):
     con = connect(db_uri)
     cur = con.cursor()
     filename_list = [
-        BASE_DIR
-        + "/data/export/"
+        "data/export/"
         + datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
         + "_"
         + table
@@ -852,38 +726,6 @@ def export_tables_to_csv(table_names, db_uri):
             + " TO STDOUT (FORMAT CSV, DELIMITER ',', HEADER true);"
         )
         cur.copy_expert(sql, open(filename, "w"))
-
-
-@click.command("import-tables")
-@click.option("--table_names", required=False)
-@click.option("--import_type", required=False)
-@click.option("--prefix", required=False)
-@with_appcontext
-def import_tables_command(table_names=False, import_type="append", prefix=""):
-    """Import data.
-
-    table_names must be passed in the right order.
-    e.g. 'doi,url,api_request,fb_request'
-
-    Files must be available as:
-        fb_request.csv, api_request.csv, doi.csv, url.csv
-
-    Import_type: append or reset
-
-    Parameters
-    ----------
-    table_names : string
-        String with table names, seperated by comma.
-
-    """
-    if not table_names or table_names == "":
-        table_names = ["imports", "dois", "urls", "requests", "fbrequests"]
-    else:
-        table_names = [table_name.strip() for table_name in table_names.split(",")]
-    if import_type == "reset":
-        import_csv_reset(table_names, prefix)
-    elif import_type == "append" or import_type == False or import_type is None:
-        import_csv_append(table_names, prefix)
 
 
 def import_csv_reset(table_names, prefix):
@@ -905,9 +747,7 @@ def import_csv_reset(table_names, prefix):
     db.create_all()
     sleep(5)
     #
-    filename_list = [
-        BASE_DIR + "/data/import/" + prefix + table + ".csv" for table in table_names
-    ]
+    filename_list = ["data/import/" + prefix + table + ".csv" for table in table_names]
 
     for idx, filename in enumerate(filename_list):
         model = table2model[table_names[idx]]
@@ -936,7 +776,7 @@ def import_csv_append(table_names, prefix):
     """
     db = get_db()
     for table_name in table_names:
-        filename = BASE_DIR + "/data/import/" + prefix + table_name + ".csv"
+        filename = "data/import/" + prefix + table_name + ".csv"
         df = read_csv(
             filename,
             encoding="utf8",
@@ -1000,3 +840,144 @@ def import_csv_append(table_names, prefix):
                 fbrequests_added += 1
             db.session.commit()
             print("{0} FBRequests added to database.".format(fbrequests_added))
+
+
+@click.command("initdb")
+@with_appcontext
+def init_db_command() -> None:
+    """Clear existing data and create new tables."""
+    init_db()
+    click.echo("Initialized the database.")
+
+
+@click.command("dropdb")
+@with_appcontext
+def drop_db_command() -> None:
+    """Clear existing data and create new tables."""
+    drop_db()
+    click.echo("Dropped all tables in the database.")
+
+
+@click.command("deploy")
+@with_appcontext
+def deploy_command() -> None:
+    """Run deployment tasks."""
+    click.echo("App deployed.")
+
+
+@click.command("resetdb")
+@with_appcontext
+def reset_db_command() -> None:
+    """Delete all entries in all tables."""
+    drop_db()
+    init_db()
+    click.echo("Dataset reseted")
+
+
+@click.command("doi-new")
+def doi_new_command() -> None:
+    """Create the new doi URL's."""
+    create_doi_new_urls()
+
+
+@click.command("doi-old")
+def doi_old_command() -> None:
+    """Create the old doi URL's."""
+    create_doi_old_urls(current_app.config["URL_BATCH_SIZE"])
+
+
+@click.command("doi-lp")
+def doi_lp_command() -> None:
+    """Create the doi landing page URL's."""
+    create_doi_lp_urls()
+
+
+@click.command("ncbi")
+def ncbi_command() -> None:
+    """Create the NCBI URL's."""
+    create_ncbi_urls(current_app.config["NCBI_TOOL"], current_app.config["APP_EMAIL"])
+
+
+@click.command("unpaywall")
+def unpaywall_command() -> None:
+    """Create the Unpaywall URL's."""
+    create_unpaywall_urls(current_app.config["APP_EMAIL"])
+
+
+@click.command("fb")
+def fb_command() -> None:
+    """Create the Facebook request."""
+    get_fb_data(
+        current_app.config["FB_APP_ID"],
+        current_app.config["FB_APP_SECRET"],
+        current_app.config["FB_BATCH_SIZE"],
+    )
+
+
+# @click.command("import-csv")
+# def import_csv_command(filename: str = None):
+#     """Import raw data from csv file.
+
+#     The filepath can be manually passed with the argument `filename`.
+
+#     Parameters
+#     ----------
+#     filename : string
+#         Relative filepath to the csv file. Defaults to None, if not passed as an
+#         argument via the command line. Relative to root.
+
+#     """
+#     if filename is None:
+#         if "CSV_FILENAME" in current_app.config:
+#             filename = current_app.config["CSV_FILENAME"]
+#         else:
+#             print("No CSV filename.")
+#     batch_size = current_app.config["URL_BATCH_SIZE"]
+#     import_init_csv(filename, batch_size)
+
+
+@click.command("export-tables")
+def export_tables_command(table_names: str = None):
+    """Export tables passed as string, seperated by comma.
+
+    Parameters
+    ----------
+    table_names : string
+        String with table names, seperated by comma.
+
+    """
+    if not table_names:
+        table_names = "imports,dois,urls,requests,fbrequests"
+
+    table_names = table_names.split(",")
+    export_tables_to_csv(table_names, current_app.config["SQLALCHEMY_DATABASE_URI"])
+
+
+@click.command("import-csv")
+def import_csv_command(
+    table_names: str = None, import_type: str = "append", prefix: str = ""
+):
+    """Import data.
+
+    table_names must be passed in the right order.
+    e.g. 'doi,url,api_request,fb_request'
+
+    Files must be available as:
+        fb_request.csv, api_request.csv, doi.csv, url.csv
+
+    Import_type: append or reset
+
+    Parameters
+    ----------
+    table_names : string
+        String with table names, seperated by comma.
+
+    """
+    if not table_names or table_names == "":
+        table_names = ["imports", "dois", "urls", "requests", "fbrequests"]
+    else:
+        table_names = [table_name.strip() for table_name in table_names.split(",")]
+    if import_type == "reset":
+        import_csv_reset(table_names, prefix)
+    elif import_type == "append" or import_type == False or import_type is None:
+        import_csv_append(table_names, prefix)

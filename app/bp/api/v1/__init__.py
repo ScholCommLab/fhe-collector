@@ -1,26 +1,25 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """API functions."""
-from flask import render_template
-from flask import request
-from flask import jsonify
-from flask import Blueprint
-
-api = Blueprint("api", __name__)
+from flask import request, Blueprint
 
 
-@api.route("/")
-def homepage():
-    return jsonify({"status": "on", "api_version": "1.0"})
+blueprint = Blueprint("v1", __name__)
 
 
-@api.route("/add_data", methods=["POST"])
+@blueprint.route("/")
+def index():
+    return {"path": "add_data/", "name": "add_data"}
+
+
+@blueprint.route("/add_data", methods=["POST"])
 def add_data():
     """Add data via an API endpoint to the database.
 
     Required: doi
     Optional: url, date
     """
+    # TODO: merge with index or remove /add_data url from blueprint
     response_status = "error"
     url_type_list = [
         "ojs",
@@ -33,7 +32,7 @@ def add_data():
     ]
 
     json_data = request.get_json()
-    token = json_data["token"]
+    # token = json_data["token"]
 
     if request.method == "POST":
         try:

@@ -61,6 +61,7 @@ INSTALL_REQUIREMENTS = [
     "tqdm==4.50.2",
     "facebook-sdk==3.1.0",
     "python-dotenv==0.14.0",
+    "pydantic==1.7.2",
 ]
 
 SETUP_REQUIREMENTS = []

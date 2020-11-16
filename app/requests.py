@@ -9,6 +9,7 @@ from json import loads
 from requests.packages.urllib3 import disable_warnings
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
+
 disable_warnings(InsecureRequestWarning)
 
 
@@ -28,11 +29,6 @@ def request_ncbi_api(url, ncbi_tool, ncbi_email):
             "format": "json",
         },
     )
-    return resp
-
-
-def request_unpaywall_api(url):
-    resp = get(url)
     return resp
 
 

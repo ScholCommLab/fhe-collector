@@ -12,7 +12,8 @@
 {% block content %}
 <div class="">
   <ul>
-    <li><a href="{{ url_for('main.api') }}" title="API">/api</a></li>
+    <li><a href="{{ url_for('api.index') }}" title="API">/api</a></li>
+    <li><a href="{{ url_for('v1.index') }}" title="API">/api/v1</a></li>
     <li><a href="{{ url_for('main.stats') }}" title="Statistics">/stats</a></li>
   </ul>
 

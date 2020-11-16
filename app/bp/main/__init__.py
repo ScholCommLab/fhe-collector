@@ -1,35 +1,25 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""main functions."""
+from flask import Blueprint
 from flask import render_template, current_app
 from flask_sqlalchemy import get_debug_queries
-from . import main
-from ..models import Doi, Import, Url, Request, FBRequest
-from ..database import get_db
+
+from app.db import get_db
+from app.models import Doi, Import, Url, Request, FBRequest
 
 
-@main.after_app_request
-def after_request(response):
-    for query in get_debug_queries():
-        if query.duration >= 0.5:
-            current_app.logger.warning(
-                "Slow query: %s\nParameters: %s\nDuration: %fs\nContext: %s\n"
-                % (query.statement, query.parameters, query.duration, query.context)
-            )
-    return response
+blueprint = Blueprint("main", __name__)
 
 
-@main.route("/")
-@main.route("/index")
+@blueprint.route("/")
+@blueprint.route("/index")
 def index():
     """Homepage."""
     return render_template("index.html", title="Home")
 
 
-@main.route("/api")
-def api():
-    """Api page."""
-    return render_template("api.html", title="API")
-
-
-@main.route("/stats")
+@blueprint.route("/stats")
 def stats():
     """Statistics."""
     db = get_db()
@@ -74,3 +64,14 @@ def stats():
         "fbrequests": db.session.query(FBRequest).count(),
     }
     return render_template("stats.html", title="Statistics", data=data)
+
+
+@blueprint.after_app_request
+def after_request(response):
+    for query in get_debug_queries():
+        if query.duration >= 0.5:
+            current_app.logger.warning(
+                "Slow query: %s\nParameters: %s\nDuration: %fs\nContext: %s\n"
+                % (query.statement, query.parameters, query.duration, query.context)
+            )
+    return response

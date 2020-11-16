@@ -1,8 +1,104 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ORM Models."""
-from datetime import datetime
-from . import db
+from datetime import datetime, timezone, date
+from sqlalchemy import (
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    DateTime,
+    Sequence,
+    Date,
+    Text,
+)
+from flask_sqlalchemy import SQLAlchemy
+
+
+class Base:
+    __abstract__ = True
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(Text, nullable=True)
+
+    def before_save(self, *args, **kwargs):
+        pass
+
+    def after_save(self, *args, **kwargs):
+        pass
+
+    def save(self, db, commit=True):
+        self.before_save()
+        db.add(self)
+        if commit:
+            try:
+                db.commit()
+                db.refresh(self)
+            except Exception as e:
+                db.rollback()
+                raise e
+
+        self.after_save()
+
+    @classmethod
+    def before_bulk_create(cls, iterable, *args, **kwargs):
+        pass
+
+    @classmethod
+    def after_bulk_create(cls, model_objs, *args, **kwargs):
+        pass
+
+    @classmethod
+    def bulk_create(cls, db, iterable, *args, **kwargs):
+        cls.before_bulk_create(iterable, *args, **kwargs)
+        model_objs = []
+        for data in iterable:
+            if not isinstance(data, cls):
+                data = cls(**data)
+            model_objs.append(data)
+
+        cls.bulk_save_objects(db, model_objs)
+        if kwargs.get("commit", True) is True:
+            db.commit()
+        cls.after_bulk_create(model_objs, *args, **kwargs)
+        return model_objs
+
+    @classmethod
+    def bulk_save_objects(cls, db, model_objs):
+        for o in model_objs:
+            db.add(o)
+
+    @classmethod
+    def bulk_create_or_none(cls, db, iterable, *args, **kwargs):
+        try:
+            return cls.bulk_create(db, iterable, *args, **kwargs)
+        except exc.IntegrityError as e:
+            db.rollback()
+            print(e)
+            return None
+
+    def before_update(self, *args, **kwargs):
+        pass
+
+    def after_update(self, *args, **kwargs):
+        pass
+
+    def update(self, db, *args, **kwargs):
+        self.before_update(*args, **kwargs)
+        db.session.commit()
+        self.after_update(*args, **kwargs)
+
+    def delete(self, db, commit=True):
+        db.session.delete(self)
+        if commit:
+            db.session.commit()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+db = SQLAlchemy(model_class=Base)
 
 
 class Import(db.Model):
@@ -12,26 +108,12 @@ class Import(db.Model):
     """
 
     __tablename__ = "imports"
-    id = db.Column(db.Integer, primary_key=True)
-    import_start = db.Column(db.DateTime(), nullable=False)
-    import_end = db.Column(db.DateTime())
-    source = db.Column(db.String(512), nullable=False)
-    raw = db.Column(db.Text())
 
-    def __init__(self, source, raw, id=False, import_start=False, import_end=False):
-        """Init Import."""
-        if id:
-            self.id = id
-        self.source = source
-        self.raw = raw
-        if import_start:
-            self.import_start = import_start
-        else:
-            self.import_start = datetime.now()
-        if import_end:
-            self.import_end = import_end
-        else:
-            self.import_end = datetime.now()
+    id = Column(Integer, primary_key=True)
+    import_start = Column(DateTime, nullable=False)
+    import_end = Column(DateTime)
+    source = Column(String, nullable=False)
+    raw = Column(Text)
 
     def __repr__(self):
         """Repr."""
@@ -48,50 +130,20 @@ class Doi(db.Model):
     """
 
     __tablename__ = "dois"
-    doi = db.Column(db.String(128), primary_key=True, nullable=False, index=True)
-    date_published = db.Column(db.DateTime())
-    import_id = db.Column(db.Integer, db.ForeignKey("imports.id"), nullable=False)
-    pmc_id = db.Column(db.String(256))
-    pm_id = db.Column(db.String(256))
-    url_doi_new = db.Column(db.Boolean, nullable=False)
-    url_doi_old = db.Column(db.Boolean, nullable=False)
-    url_doi_lp = db.Column(db.Boolean, nullable=False)
-    url_ncbi = db.Column(db.Boolean, nullable=False)
-    url_pm = db.Column(db.Boolean, nullable=False)
-    url_pmc = db.Column(db.Boolean, nullable=False)
-    url_unpaywall = db.Column(db.Boolean, nullable=False)
-    is_valid = db.Column(db.Boolean)
 
-    def __init__(
-        self,
-        doi,
-        date_published,
-        import_id,
-        pmc_id=False,
-        pm_id=False,
-        url_doi_new=False,
-        url_doi_old=False,
-        url_doi_lp=False,
-        url_ncbi=False,
-        url_pm=False,
-        url_pmc=False,
-        url_unpaywall=False,
-        is_valid=False,
-    ):
-        """Init Doi."""
-        self.doi = doi
-        self.date_published = date_published
-        self.import_id = import_id
-        self.pmc_id = pmc_id
-        self.pm_id = pm_id
-        self.url_doi_new = url_doi_new
-        self.url_doi_old = url_doi_old
-        self.url_doi_lp = url_doi_lp
-        self.url_ncbi = url_ncbi
-        self.url_pm = url_pm
-        self.url_pmc = url_pmc
-        self.url_unpaywall = url_unpaywall
-        self.is_valid = is_valid
+    doi = Column(String(128), primary_key=True, nullable=False, index=True)
+    date_published = Column(DateTime())
+    import_id = Column(Integer, ForeignKey("imports.id"), nullable=False)
+    pmc_id = Column(String(256))
+    pm_id = Column(String(256))
+    url_doi_new = Column(Boolean, nullable=False)
+    url_doi_old = Column(Boolean, nullable=False)
+    url_doi_lp = Column(Boolean, nullable=False)
+    url_ncbi = Column(Boolean, nullable=False)
+    url_pm = Column(Boolean, nullable=False)
+    url_pmc = Column(Boolean, nullable=False)
+    url_unpaywall = Column(Boolean, nullable=False)
+    is_valid = Column(Boolean)
 
     def __repr__(self):
         """Repr."""
@@ -106,20 +158,11 @@ class Url(db.Model):
     """
 
     __tablename__ = "urls"
-    url = db.Column(db.String(512), primary_key=True, index=True)
-    doi = db.Column(db.String(64), db.ForeignKey("dois.doi"), nullable=False)
-    url_type = db.Column(db.String(32))
-    date_added = db.Column(db.DateTime(), nullable=False)
 
-    def __init__(self, url, doi, url_type, date_added=None):
-        """Init Url."""
-        self.url = url
-        self.doi = doi
-        self.url_type = url_type
-        if date_added:
-            self.date_added = date_added
-        else:
-            self.date_added = datetime.now()
+    url = Column(String(512), primary_key=True, index=True)
+    doi = Column(String(64), ForeignKey("dois.doi"), nullable=False)
+    url_type = Column(String(32))
+    date_added = Column(DateTime(), nullable=False)
 
     def __repr__(self):
         """Repr."""
@@ -130,22 +173,13 @@ class Request(db.Model):
     """NCBIRequest model."""
 
     __tablename__ = "requests"
-    id = db.Column(db.Integer, primary_key=True)
-    doi = db.Column(db.String(64), db.ForeignKey("dois.doi"), nullable=False)
-    request_url = db.Column(db.String(512))
-    request_type = db.Column(db.String(32))
-    response_content = db.Column(db.Text())
-    response_status = db.Column(db.String(32))
 
-    def __init__(
-        self, doi, request_url, request_type, response_content, response_status,
-    ):
-        """Init APIRequest."""
-        self.doi = doi
-        self.request_url = request_url
-        self.request_type = request_type
-        self.response_content = response_content
-        self.response_status = response_status
+    id = Column(Integer, primary_key=True)
+    doi = Column(String(64), ForeignKey("dois.doi"), nullable=False)
+    request_url = Column(String(512))
+    request_type = Column(String(32))
+    response_content = Column(Text())
+    response_status = Column(String)
 
     def __repr__(self):
         """Repr."""
@@ -156,40 +190,24 @@ class FBRequest(db.Model):
     """FBRequest model."""
 
     __tablename__ = "fbrequests"
-    id = db.Column(db.Integer, primary_key=True)
-    url_url = db.Column(db.String(512), db.ForeignKey("urls.url"), nullable=False)
-    response = db.Column(db.Text())
-    reactions = db.Column(db.Integer)
-    shares = db.Column(db.Integer)
-    comments = db.Column(db.Integer)
-    plugin_comments = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime())
 
-    def __init__(
-        self,
-        url_url,
-        response,
-        reactions=False,
-        shares=False,
-        comments=False,
-        plugin_comments=False,
-        timestamp=False,
-        id=False,
-    ):
-        """Init FBRequest."""
-        if id:
-            self.id = id
-        self.url_url = url_url
-        self.response = response
-        self.reactions = reactions
-        self.shares = shares
-        self.comments = comments
-        self.plugin_comments = plugin_comments
-        if timestamp:
-            self.timestamp = timestamp
-        else:
-            self.timestamp = datetime.now()
+    id = Column(Integer, primary_key=True)
+    url_url = Column(String(512), ForeignKey("urls.url"), nullable=False)
+    response = Column(Text())
+    reactions = Column(Integer)
+    shares = Column(Integer)
+    comments = Column(Integer)
+    plugin_comments = Column(Integer)
+    timestamp = Column(DateTime())
 
     def __repr__(self):
         """Repr."""
         return "<Facebook Request {}>".format(self.request)
+
+
+class Table2Model:
+    IMPORTS = Import()
+    DOIS = Doi()
+    URLS = Url()
+    REQUESTS = Request()
+    FBREQUESTS = FBRequest()
