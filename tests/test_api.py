@@ -10,10 +10,17 @@ def api_add_data_response():
     return response
 
 
-def test_homepage_url(client):
+def test_api(client):
     """Start with a blank database."""
 
-    rv = client.get("/api")
+    rv = client.get("/api/")
+    assert 200 == rv.status_code
+
+
+def test_v1(client):
+    """Start with a blank database."""
+
+    rv = client.get("/api/v1/")
     assert 200 == rv.status_code
 
 

@@ -4,8 +4,8 @@
 import os
 import tempfile
 import pytest
-from app.database import init_db
-from app import create_app
+from app.db import init_db
+from app.main import create_app
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -14,9 +14,6 @@ TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 @pytest.fixture
 def app():
     """Create and configure a new app instance for each test."""
-    # create a temporary file to isolate the database for each test
-    db_fd, db_path = tempfile.mkstemp()
-
     # create the app with common test config
     if os.getenv("TRAVIS") or False:
         app = create_app("travis")
@@ -28,10 +25,6 @@ def app():
         init_db()
 
     yield app
-
-    # close and remove the temporary database
-    os.close(db_fd)
-    os.unlink(db_path)
 
 
 @pytest.fixture

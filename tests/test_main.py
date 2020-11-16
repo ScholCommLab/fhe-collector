@@ -11,3 +11,6 @@ def test_homepage_url(client):
 
     rv = client.get("/index")
     assert 200 == rv.status_code
+
+    rv = client.get("/stats")
+    assert 200 == rv.status_code

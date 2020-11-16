@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test database."""
 import pytest
-from app.database import get_db
+from app.db import get_db
 
 
 def test_get_db(app):
