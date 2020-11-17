@@ -9,7 +9,7 @@ from json import dump, load
 import re
 
 
-def read_file(filename, mode="r", encoding="utf-8"):
+def read_file(filename: str, mode: str = "r", encoding: str = "utf-8") -> str:
     """Read in a file.
 
     Parameters
@@ -26,18 +26,16 @@ def read_file(filename, mode="r", encoding="utf-8"):
         Returns data as string.
 
     """
-    assert isinstance(filename, str)
-    assert isinstance(mode, str)
-    assert isinstance(encoding, str)
 
     with open(filename, mode, encoding=encoding) as f:
         data = f.read()
 
-    assert isinstance(data, str)
     return data
 
 
-def write_file(filename, data, mode="w", encoding="utf-8"):
+def write_file(
+    filename: str, data: str, mode: str = "w", encoding: str = "utf-8"
+) -> None:
     """Write data in a file.
 
     Parameters
@@ -53,16 +51,12 @@ def write_file(filename, data, mode="w", encoding="utf-8"):
         Character encoding of file. Defaults to 'utf-8'.
 
     """
-    assert isinstance(filename, str)
-    assert isinstance(data, str)
-    assert isinstance(mode, str)
-    assert isinstance(encoding, str)
 
     with open(filename, mode, encoding=encoding) as f:
         f.write(data)
 
 
-def read_json(filename, mode="r", encoding="utf-8"):
+def read_json(filename: str, mode: str = "r", encoding: str = "utf-8") -> dict:
     """Read in a json file.
 
     See more about the json module at
@@ -84,18 +78,16 @@ def read_json(filename, mode="r", encoding="utf-8"):
         Data as a json-formatted string.
 
     """
-    assert isinstance(filename, str)
-    assert isinstance(mode, str)
-    assert isinstance(encoding, str)
 
     with open(filename, mode, encoding=encoding) as f:
         data = load(f)
 
-    assert isinstance(data, dict) or isinstance(data, list)
     return data
 
 
-def write_json(filename, data, mode="w", encoding="utf-8"):
+def write_json(
+    filename: str, data: dict, mode: str = "w", encoding: str = "utf-8"
+) -> None:
     """Write data to a json file.
 
     Parameters
@@ -111,16 +103,18 @@ def write_json(filename, data, mode="w", encoding="utf-8"):
         Character encoding of file. Defaults to 'utf-8'.
 
     """
-    assert isinstance(filename, str)
-    assert isinstance(data, dict) or isinstance(data, list)
-    assert isinstance(mode, str)
-    assert isinstance(encoding, str)
 
     with open(filename, mode, encoding=encoding) as f:
         dump(data, f, indent=2)
 
 
-def read_csv(filename, newline="", delimiter=",", quotechar='"', encoding="utf-8"):
+def read_csv(
+    filename: str,
+    newline: str = "",
+    delimiter: str = ",",
+    quotechar: str = '"',
+    encoding: str = "utf-8",
+) -> csv_reader:
     """Read in a CSV file.
 
     See more at `csv <https://docs.python.org/3/library/csv.html>`_.
@@ -144,21 +138,19 @@ def read_csv(filename, newline="", delimiter=",", quotechar='"', encoding="utf-8
         Reader object, which can be iterated over.
 
     """
-    assert isinstance(filename, str)
-    assert isinstance(newline, str)
-    assert isinstance(delimiter, str)
-    assert isinstance(quotechar, str)
-    assert isinstance(encoding, str)
-
     with open(filename, newline=newline, encoding=encoding) as csvfile:
         csv_reader = csv_reader(csvfile, delimiter=delimiter, quotechar=quotechar)
-        assert isinstance(csv_reader, csv.reader)
         return csv_reader
 
 
 def write_csv(
-    data, filename, newline="", delimiter=",", quotechar='"', encoding="utf-8"
-):
+    data: list,
+    filename: str,
+    newline: str = "",
+    delimiter: str = ",",
+    quotechar: str = '"',
+    encoding: str = "utf-8",
+) -> None:
     """Short summary.
 
     See more at `csv <https://docs.python.org/3/library/csv.html>`_.
@@ -179,13 +171,6 @@ def write_csv(
         Character encoding of file. Defaults to 'utf-8'.
 
     """
-    assert isinstance(data, list)
-    assert isinstance(filename, str)
-    assert isinstance(newline, str)
-    assert isinstance(delimiter, str)
-    assert isinstance(quotechar, str)
-    assert isinstance(encoding, str)
-
     with open(filename, "w", newline=newline, encoding=encoding) as csvfile:
         writer = csv_writer(csvfile, delimiter=delimiter, quotechar=quotechar)
         for row in data:
@@ -193,8 +178,12 @@ def write_csv(
 
 
 def read_csv_as_dicts(
-    filename, newline="", delimiter=",", quotechar='"', encoding="utf-8"
-):
+    filename: str,
+    newline: str = "",
+    delimiter: str = ",",
+    quotechar: str = '"',
+    encoding: str = "utf-8",
+) -> list:
     """Read in CSV file into a list of :class:`dict`.
 
     This offers an easy import functionality of your data from CSV files.
@@ -226,22 +215,21 @@ def read_csv_as_dicts(
         named after the columen names.
 
     """
-    assert isinstance(filename, str)
-    assert isinstance(newline, str)
-    assert isinstance(delimiter, str)
-    assert isinstance(quotechar, str)
-    assert isinstance(encoding, str)
-
     with open(filename, "r", newline=newline, encoding=encoding) as csvfile:
         reader = csv_DictReader(csvfile, delimiter=delimiter, quotechar=quotechar)
         data = []
         for row in reader:
             data.append(dict(row))
-    assert isinstance(data, list)
     return data
 
 
-def write_dicts_as_csv(data, fieldnames, filename, delimiter=",", quotechar='"'):
+def write_dicts_as_csv(
+    data: dict,
+    fieldnames: list,
+    filename: str,
+    delimiter: str = ",",
+    quotechar: str = '"',
+) -> None:
     """Write :class:`dict` to a CSV file
 
     This offers an easy export functionality of your data to a CSV files.
@@ -261,12 +249,6 @@ def write_dicts_as_csv(data, fieldnames, filename, delimiter=",", quotechar='"')
         Quote-character of CSV file. Defaults to '"'.
 
     """
-    assert isinstance(data, str)
-    assert isinstance(fieldnames, list)
-    assert isinstance(filename, str)
-    assert isinstance(delimiter, str)
-    assert isinstance(quotechar, str)
-
     with open(filename, "w", newline="") as csvfile:
         writer = csv_DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -274,11 +256,11 @@ def write_dicts_as_csv(data, fieldnames, filename, delimiter=",", quotechar='"')
         for d in data:
             for key, val in d.items():
                 if isinstance(val, dict) or isinstance(val, list):
-                    d[key] = json.dump(val)
+                    d[key] = dump(val)
             writer.writerow(d)
 
 
-def is_valid_doi(doi):
+def is_valid_doi(doi: str) -> bool:
     """Validate a DOI via regular expressions.
 
     Parameters
