@@ -24,7 +24,6 @@ def test_config_development():
     assert not app.config["DEBUG_TB_INTERCEPT_REDIRECTS"]
     assert "API_TOKEN" in app.config
     assert app.config["API_TOKEN"] == None
-    assert app.config["CSV_FILENAME"] == None
     assert app.config["ADMIN_EMAIL"] == None
     assert app.config["APP_EMAIL"] == None
     assert app.config["NCBI_TOOL"] == None
@@ -52,7 +51,6 @@ def test_config_testing():
     assert "SQLALCHEMY_ECHO" in app.config
     assert not app.config["SQLALCHEMY_ECHO"]
     assert app.config["API_TOKEN"] == "api-token"
-    assert app.config["CSV_FILENAME"] == None
     assert app.config["ADMIN_EMAIL"] == "admin@fhe.com"
     assert app.config["APP_EMAIL"] == "app@fhe.com"
     assert app.config["NCBI_TOOL"] == "FHE Collector"

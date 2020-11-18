@@ -178,13 +178,12 @@ class FBRequest(BaseModel):
     __tablename__ = "fbrequests"
 
     id = db.Column(db.Integer, primary_key=True)
-    url_url = db.Column(db.String, db.ForeignKey("urls.url"), nullable=False)
+    url = db.Column(db.String, db.ForeignKey("urls.url"), nullable=False)
     response = db.Column(db.Text)
     reactions = db.Column(db.Integer)
     shares = db.Column(db.Integer)
     comments = db.Column(db.Integer)
     plugin_comments = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime)
 
     def __repr__(self):
         """Repr."""

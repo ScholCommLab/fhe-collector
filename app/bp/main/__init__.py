@@ -27,23 +27,21 @@ def stats():
         "imports": db.session.query(Import).count(),
         "dois": {
             "num": db.session.query(Doi).count(),
-            "new": db.session.query(Doi).filter(Doi.url_doi_new == False).count(),
-            "old": db.session.query(Doi).filter(Doi.url_doi_old == False).count(),
-            "lp": db.session.query(Doi).filter(Doi.url_doi_lp == False).count(),
-            "ncbi": db.session.query(Doi).filter(Doi.url_ncbi == False).count(),
-            "pmc": db.session.query(Doi).filter(Doi.url_pmc == False).count(),
-            "pm": db.session.query(Doi).filter(Doi.url_pm == False).count(),
+            "new": db.session.query(Doi).filter(Doi.url_doi_new == True).count(),
+            "old": db.session.query(Doi).filter(Doi.url_doi_old == True).count(),
+            "lp": db.session.query(Doi).filter(Doi.url_doi_lp == True).count(),
+            "ncbi": db.session.query(Doi).filter(Doi.url_ncbi == True).count(),
+            "pmc": db.session.query(Doi).filter(Doi.url_pmc == True).count(),
+            "pm": db.session.query(Doi).filter(Doi.url_pm == True).count(),
             "unpaywall": db.session.query(Doi)
-            .filter(Doi.url_unpaywall == False)
+            .filter(Doi.url_unpaywall == True)
             .count(),
         },
         "urls": {
             "num": db.session.query(Url).count(),
             "new": db.session.query(Url).filter(Url.url_type == "doi_new").count(),
             "old": db.session.query(Url).filter(Url.url_type == "doi_old").count(),
-            "lp": db.session.query(Url)
-            .filter(Url.url_type == "doi_landingpage")
-            .count(),
+            "lp": db.session.query(Url).filter(Url.url_type == "doi_lp").count(),
             "pm": db.session.query(Url).filter(Url.url_type == "pm").count(),
             "pmc": db.session.query(Url).filter(Url.url_type == "pmc").count(),
             "unpaywall": db.session.query(Url)
@@ -53,12 +51,14 @@ def stats():
         },
         "requests": {
             "num": db.session.query(Request).count(),
-            "lp": db.session.query(Request).filter(Request.request_type == "").count(),
+            "lp": db.session.query(Request)
+            .filter(Request.request_type == "doi_lp")
+            .count(),
             "ncbi": db.session.query(Request)
-            .filter(Request.request_type == "")
+            .filter(Request.request_type == "ncbi")
             .count(),
             "unpaywall": db.session.query(Request)
-            .filter(Request.request_type == "")
+            .filter(Request.request_type == "unpaywall")
             .count(),
         },
         "fbrequests": db.session.query(FBRequest).count(),

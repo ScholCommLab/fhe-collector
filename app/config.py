@@ -15,7 +15,6 @@ class Config(BaseSettings):
     DEBUG: bool = False
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     API_TOKEN: str = None
-    CSV_FILENAME: FilePath = None
     ADMIN_EMAIL: str = None
     APP_EMAIL: str = None
     SECRET_KEY: str = "my-secret-key"

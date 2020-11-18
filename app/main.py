@@ -19,15 +19,16 @@ from app.bp.main import blueprint as main_blueprint
 from app.config import get_config, get_config_name
 from app.db import (
     close_db,
-    init_db,
-    drop_db,
-    import_basedata,
-    dev,
+    create_doi_lp_urls,
     create_doi_new_urls,
     create_doi_old_urls,
-    create_doi_lp_urls,
     create_ncbi_urls,
     create_unpaywall_urls,
+    dev,
+    drop_db,
+    get_fb_data,
+    import_basedata,
+    init_db,
 )
 from app.models import db
 
@@ -174,4 +175,4 @@ def unpaywall_command() -> None:
 @with_appcontext
 def fb_command() -> None:
     """Create the Facebook request."""
-    pass
+    get_fb_data()

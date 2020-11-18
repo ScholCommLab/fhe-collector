@@ -443,3 +443,45 @@ def create_unpaywall_urls() -> None:
         num_requests_added += len(db_requests_added)
     print('{0} "Unpaywall" URL\'s added to database.'.format(num_urls_unpaywall_added))
     print("{0} Requests added to database.".format(num_requests_added))
+
+
+def get_fb_data():
+    """Get app access token.
+
+    Example Response:
+    {'id': 'http://dx.doi.org/10.22230/src.2010v1n2a24', 'engagement': { 'share_count': 0, 'comment_plugin_count': 0, 'reaction_count': 0, 'comment_count': 0}}
+    """
+    num_fbrequests_added = 0
+    app_id = config.FB_APP_ID
+    app_secret = config.FB_APP_SECRET
+    batch_size = config.FB_BATCH_SIZE
+
+    db = get_db()
+    token = get_GraphAPI_token(app_id, app_secret)
+    fb_graph = get_GraphAPI(token["access_token"], version="3.1")
+
+    result_url = get_all(db, Url)
+
+    for i in tqdm(range(0, len(result_url), batch_size)):
+        db_requests_added = []
+        request_url_list = [row.url for row in result_url[i : i + batch_size]]
+
+        urls_response = get_GraphAPI_urls(fb_graph, request_url_list)
+        for url, response in urls_response.items():
+            req_dict = {
+                "url": url,
+                "response": dumps(response),
+                "reactions": response["engagement"]["reaction_count"],
+                "shares": response["engagement"]["share_count"],
+                "comments": response["engagement"]["comment_count"],
+                "plugin_comments": response["engagement"]["comment_plugin_count"],
+            }
+            db_requests_added.append(req_dict)
+            num_fbrequests_added += 1
+        create_entities(db, FBRequest, db_requests_added)
+        num_fbrequests_added += len(db_requests_added)
+    print(
+        "{0} Facebook openGraph request's added to database.".format(
+            num_fbrequests_added
+        )
+    )
