@@ -13,7 +13,10 @@ def test_config_development():
     app = create_app("development")
     assert not app.config["TESTING"]
     assert not app.testing
-    assert app.config["TRAVIS"] is False
+    if os.getenv("TRAVIS") or False:
+        assert app.config["TRAVIS"] is True
+    else:
+        assert app.config["TRAVIS"] is False
     assert app.config["DEBUG"] is True
     assert app.config["SECRET_KEY"] == "my-secret-key"
     assert (
@@ -23,12 +26,12 @@ def test_config_development():
     assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
     assert not app.config["DEBUG_TB_INTERCEPT_REDIRECTS"]
     assert "API_TOKEN" in app.config
-    assert app.config["API_TOKEN"] == None
-    assert app.config["ADMIN_EMAIL"] == None
-    assert app.config["APP_EMAIL"] == None
-    assert app.config["NCBI_TOOL"] == None
-    assert app.config["FB_APP_ID"] == None
-    assert app.config["FB_APP_SECRET"] == None
+    assert app.config["API_TOKEN"] is None
+    assert app.config["ADMIN_EMAIL"] is None
+    assert app.config["APP_EMAIL"] is None
+    assert app.config["NCBI_TOOL"] is None
+    assert app.config["FB_APP_ID"] is None
+    assert app.config["FB_APP_SECRET"] is None
     assert app.config["FB_HOURLY_RATELIMIT"] == 200
     assert app.config["FB_BATCH_SIZE"] == 50
     assert app.config["URL_BATCH_SIZE"] == 1000
@@ -39,8 +42,11 @@ def test_config_testing():
     app = create_app("testing")
     assert "TESTING" in app.config
     assert app.config["TESTING"]
-    assert app.config["TRAVIS"] is False
     assert app.testing
+    if os.getenv("TRAVIS") or False:
+        assert app.config["TRAVIS"] is True
+    else:
+        assert app.config["TRAVIS"] is False
     assert app.config["DEBUG"] is False
     assert app.config["SECRET_KEY"] == "secret-env-key"
     assert (
@@ -62,7 +68,7 @@ def test_config_testing():
     assert "fhe_collector" == app.name
 
 
-def test_config_testing_travis():
+def test_config_travis():
     app = create_app("travis")
     assert "TESTING" in app.config
     assert app.config["TESTING"]
@@ -83,7 +89,10 @@ def test_config_production():
     assert "TESTING" in app.config
     assert not app.config["TESTING"]
     assert not app.testing
-    assert app.config["TRAVIS"] is False
+    if os.getenv("TRAVIS") or False:
+        assert app.config["TRAVIS"] is True
+    else:
+        assert app.config["TRAVIS"] is False
     assert app.config["DEBUG"] is False
     assert app.config["SECRET_KEY"] == "my-secret-key"
     assert (
