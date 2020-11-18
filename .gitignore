@@ -35,6 +35,7 @@ pytest.ini
 
 # Personal
 *.code-workspace
+settings.json
 .pypirc
 .env
 .env_psql
