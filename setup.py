@@ -90,7 +90,7 @@ CLASSIFIERS = [
 setup(
     author="Stefan Kasberger",
     author_email="mail@stefankasberger.at",
-    name="FHE-Collector",
+    name="FHE Collector",
     version=find_version("app/__init__.py"),
     description="Facebook Hidden Engagement Microservice",
     long_description=read_file("README.md"),
@@ -106,7 +106,7 @@ setup(
     tests_require=TESTS_REQUIREMENTS,
     # cmdclass={"test": Tox},
     include_package_data=True,
-    keywords=["fhe_collector", "flask", "facebook", "ncbi", "api", "doi"],
+    keywords=["flask", "facebook", "ncbi", "api", "doi", "Graph API"],
     zip_safe=False,
     project_urls={
         "Documentation": "https://fhe-collector.readthedocs.io/",

@@ -23,10 +23,10 @@ import app
 
 # -- Project information -----------------------------------------------------
 
-project = "FHE Collector"
-copyright = "2018, Public Knowledge Project"
-author = "Public Knowledge Project"
-description = "Facebook Hidden Engagement Microservice"
+project = app.__name__
+copyright = app.__copyright__
+author = app.__author__
+description = app.__description__
 
 # The short X.Y version
 version = app.__version__

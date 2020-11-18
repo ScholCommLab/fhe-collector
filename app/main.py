@@ -16,6 +16,7 @@ import os
 from app.bp.api import blueprint as api_blueprint
 from app.bp.api.v1 import blueprint as api_v1_blueprint
 from app.bp.main import blueprint as main_blueprint
+from app.bp.main.errors import not_found_error, internal_error
 from app.config import get_config, get_config_name
 from app.db import (
     close_db,
@@ -63,6 +64,8 @@ def create_app(test_config: str = None) -> Flask:
     app.register_blueprint(main_blueprint)
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.register_blueprint(api_v1_blueprint, url_prefix="/api/v1")
+    app.register_error_handler(404, not_found_error)
+    app.register_error_handler(500, internal_error)
 
     print(' * Settings "{0}" loaded'.format(config_name))
     print(" * Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
