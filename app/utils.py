@@ -1,11 +1,8 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Helper functions."""
-from csv import reader as csv_reader
-from csv import writer as csv_writer
-from csv import DictReader as csv_DictReader
-from csv import DictWriter as csv_DictWriter
-from json import dump, load
+from csv import reader, writer, DictReader, DictWriter
+from json import dump, dumps, load
 import re
 
 
@@ -114,7 +111,7 @@ def read_csv(
     delimiter: str = ",",
     quotechar: str = '"',
     encoding: str = "utf-8",
-) -> csv_reader:
+) -> reader:
     """Read in a CSV file.
 
     See more at `csv <https://docs.python.org/3/library/csv.html>`_.
@@ -138,8 +135,9 @@ def read_csv(
         Reader object, which can be iterated over.
 
     """
+
     with open(filename, newline=newline, encoding=encoding) as csvfile:
-        csv_reader = csv_reader(csvfile, delimiter=delimiter, quotechar=quotechar)
+        csv_reader = reader(csvfile, delimiter=delimiter, quotechar=quotechar)
         return csv_reader
 
 
@@ -171,8 +169,9 @@ def write_csv(
         Character encoding of file. Defaults to 'utf-8'.
 
     """
+
     with open(filename, "w", newline=newline, encoding=encoding) as csvfile:
-        writer = csv_writer(csvfile, delimiter=delimiter, quotechar=quotechar)
+        writer = writer(csvfile, delimiter=delimiter, quotechar=quotechar)
         for row in data:
             writer.writerow(row)
 
@@ -215,8 +214,9 @@ def read_csv_as_dicts(
         named after the columen names.
 
     """
+
     with open(filename, "r", newline=newline, encoding=encoding) as csvfile:
-        reader = csv_DictReader(csvfile, delimiter=delimiter, quotechar=quotechar)
+        reader = DictReader(csvfile, delimiter=delimiter, quotechar=quotechar)
         data = []
         for row in reader:
             data.append(dict(row))
@@ -249,14 +249,15 @@ def write_dicts_as_csv(
         Quote-character of CSV file. Defaults to '"'.
 
     """
+
     with open(filename, "w", newline="") as csvfile:
-        writer = csv_DictWriter(csvfile, fieldnames=fieldnames)
+        writer = DictWriter(csvfile, fieldnames=fieldnames, delimiter=delimiter)
         writer.writeheader()
 
         for d in data:
             for key, val in d.items():
                 if isinstance(val, dict) or isinstance(val, list):
-                    d[key] = dump(val)
+                    d[key] = dumps(val)
             writer.writerow(d)
 
 

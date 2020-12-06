@@ -1,8 +1,9 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ORM Models."""
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 
 
 db = SQLAlchemy()
@@ -65,7 +66,7 @@ class BaseModel(db.Model):
     def bulk_create_or_none(cls, db, iterable, *args, **kwargs):
         try:
             return cls.bulk_create(db, iterable, *args, **kwargs)
-        except exc.IntegrityError as e:
+        except IntegrityError as e:
             db.session.rollback()
             print(e)
             return None
@@ -85,9 +86,6 @@ class BaseModel(db.Model):
         db.session.delete(self)
         if commit:
             db.session.commit()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 class Import(BaseModel):
@@ -188,11 +186,3 @@ class FBRequest(BaseModel):
     def __repr__(self):
         """Repr."""
         return "<Facebook Request {0}>".format(self.request)
-
-
-class Table2Model:
-    IMPORTS = Import()
-    DOIS = Doi()
-    URLS = Url()
-    REQUESTS = Request()
-    FBREQUESTS = FBRequest()

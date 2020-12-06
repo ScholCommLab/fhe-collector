@@ -1,15 +1,12 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Database functions."""
-import click
 from datetime import datetime
-from flask import current_app, Flask, g
-from json import loads, dumps
+from json import dumps
 import os
+from flask import g
+from flask_sqlalchemy import SQLAlchemy
 from pandas import read_csv
-from psycopg2 import connect
-from sqlalchemy.orm import Session
-from sqlalchemy.orm.query import Query
 from tqdm import tqdm
 
 try:
@@ -17,25 +14,33 @@ try:
 except ImportError:
     from urlparse import quote
 
-from app.config import get_config_name, get_config
+from app.config import get_config_class
 from app.crud import create_entity, create_entities, get_all
 from app.models import db, Doi, Import, Url, Request, FBRequest
 from app.requests import (
     request_doi_landingpage,
     request_ncbi_api,
     request_unpaywall_api,
-    get_GraphAPI,
-    get_GraphAPI_urls,
-    get_GraphAPI_token,
+    get_graph_api,
+    get_graph_api_urls,
+    get_graph_api_token,
 )
 from app.utils import is_valid_doi
 
 
-config_name = get_config_name()
-config = get_config(config_name)
+def get_config():
+    config_name = os.getenv("FLASK_CONFIG") or "default"
+    config_class = get_config_class(config_name)
+
+    if os.getenv("ENV_FILE"):
+        config = config_class(_env_file=os.getenv("ENV_FILE"))
+    else:
+        config = config_class()
+
+    return config
 
 
-def get_db() -> Session:
+def get_db() -> SQLAlchemy:
     """Connect to the application's configured database. The connection
     is unique for each request and will be reused if this is called
     again.
@@ -62,15 +67,16 @@ def init_db() -> None:
 
 
 def drop_db() -> None:
+
     db = get_db()
     db.drop_all()
 
 
-def dev():
+def dev() -> None:
     pass
 
 
-def import_basedata(filename: str, reset: bool = False) -> None:
+def import_basedata(filename: str, reset: bool = False) -> dict:
     """
 
     * preprocess data
@@ -78,7 +84,8 @@ def import_basedata(filename: str, reset: bool = False) -> None:
         * remove duplicates: doi, url
         * na mit None befüllen
         * validate doi
-        * OPTIONAL: trim whitespace of doi, url, url_type and date_published fields => necessary? :OPTIONAL
+        * OPTIONAL: trim whitespace of doi, url, url_type and date_published
+            fields => necessary? :OPTIONAL
     * create import entry and save id
     * if is_valid
         * create list of dicts for dois and list of dicts for urls
@@ -95,6 +102,7 @@ def import_basedata(filename: str, reset: bool = False) -> None:
     dois_invalid = []
 
     db = get_db()
+    config = get_config()
     batch_size = config.URL_BATCH_SIZE
     df = read_csv(filename, encoding="utf8")
     json_str = df.to_json(orient="records")
@@ -122,7 +130,7 @@ def import_basedata(filename: str, reset: bool = False) -> None:
                 'url': 'http://www.cjc-online.ca/index.php/journal/article/view/1208',
                 'doi': '10.22230/cjc.2001v26n1a1208',
                 'url_type': 'ojs',
-                'date_published': '2001-01-01'
+                'date_published': '2001-01-01',
             }
             """
             if is_valid_doi(d["doi"]):
@@ -169,11 +177,12 @@ def create_doi_new_urls() -> None:
     urls_added = []
 
     db = get_db()
+    config = get_config()
     batch_size = config.URL_BATCH_SIZE
 
     url_list = [url.url for url in get_all(db, Url)]
 
-    # get all DOIs, where url_doi_new=False
+    # get all DOIs, where url_doi_new = False
     list_dois = Doi.query.filter(Doi.url_doi_new == False).all()
     print("Found DOI's: {0}".format(len(list_dois)))
 
@@ -201,6 +210,7 @@ def create_doi_old_urls() -> None:
     urls_added = []
 
     db = get_db()
+    config = get_config()
     batch_size = config.URL_BATCH_SIZE
 
     url_list = [url.url for url in get_all(db, Url)]
@@ -233,6 +243,7 @@ def create_doi_lp_urls() -> None:
     urls_added = []
 
     db = get_db()
+    config = get_config()
     # batch_size = config.URL_BATCH_SIZE # TODO: identify default and best practice values
     batch_size = 20
 
@@ -288,6 +299,7 @@ def create_ncbi_urls() -> None:
     urls_added = []
 
     db = get_db()
+    config = get_config()
     ncbi_tool = config.NCBI_TOOL
     ncbi_email = config.APP_EMAIL
     request_batch_size = 20
@@ -385,6 +397,7 @@ def create_unpaywall_urls() -> None:
     urls_added = []
 
     db = get_db()
+    config = get_config()
     # batch_size = config.URL_BATCH_SIZE # TODO: identify default and best practice values
     email = config.APP_EMAIL
     batch_size = 20
@@ -445,20 +458,21 @@ def create_unpaywall_urls() -> None:
     print("{0} Requests added to database.".format(num_requests_added))
 
 
-def get_fb_data():
+def get_fb_data() -> None:
     """Get app access token.
 
     Example Response:
     {'id': 'http://dx.doi.org/10.22230/src.2010v1n2a24', 'engagement': { 'share_count': 0, 'comment_plugin_count': 0, 'reaction_count': 0, 'comment_count': 0}}
     """
+    config = get_config()
     num_fbrequests_added = 0
     app_id = config.FB_APP_ID
     app_secret = config.FB_APP_SECRET
     batch_size = config.FB_BATCH_SIZE
 
     db = get_db()
-    token = get_GraphAPI_token(app_id, app_secret)
-    fb_graph = get_GraphAPI(token["access_token"], version="3.1")
+    token = get_graph_api_token(app_id, app_secret)
+    fb_graph = get_graph_api(token["access_token"], version="3.1")
 
     result_url = get_all(db, Url)
 
@@ -466,7 +480,7 @@ def get_fb_data():
         db_requests_added = []
         request_url_list = [row.url for row in result_url[i : i + batch_size]]
 
-        urls_response = get_GraphAPI_urls(fb_graph, request_url_list)
+        urls_response = get_graph_api_urls(fb_graph, request_url_list)
         for url, response in urls_response.items():
             req_dict = {
                 "url": url,

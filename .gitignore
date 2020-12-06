@@ -3,54 +3,29 @@ __pycache__/
 *.py[cod]
 *.so
 venv/
-venv_home/
 
 # Misc
 *~
 .*.sw?
-.env/
-
-# Distribution / packaging
-build/
-dist/
-.eggs/
-*.egg-info/
-*.egg
-MANIFEST
+env/
 
 # Documentation
 docs/
-fhe-collector/docs/build
-fhe-collector/docs/Makefile
-
-# Unit test / coverage reports
-.tox
-.coverage
-.coverage.*
-.*cache
-coverage.xml
-*.cover
-pip-wheel-metadata
-pytest.ini
+app/docs/build
+app/docs/Makefile
 
 # Personal
-*.code-workspace
-settings.json
+pytest.ini
 .pypirc
 .env
-.env_psql
-notes*.md
 dev/
 app/static/import/*
 app/static/export/*
-instance/
-intern/
+internal/
+data/
 fhe.log*
-.pytest_cache/
 .cache
-app.db
 *.sqlite3
-.coverage
 migrations/script.py.mako
 migrations/README
 migrations/env.py

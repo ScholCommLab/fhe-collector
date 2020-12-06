@@ -14,13 +14,13 @@ blueprint = Blueprint("main", __name__)
 
 @blueprint.route("/")
 @blueprint.route("/index")
-def index():
+def index() -> None:
     """Homepage."""
     return render_template("index.html", title="Home")
 
 
 @blueprint.route("/stats")
-def stats():
+def stats() -> None:
     """Statistics."""
     db = get_db()
     data = {
@@ -67,7 +67,7 @@ def stats():
 
 
 @blueprint.after_app_request
-def after_request(response):
+def after_request(response) -> None:
     for query in get_debug_queries():
         if query.duration >= 0.5:
             current_app.logger.warning(

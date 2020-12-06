@@ -1,10 +1,10 @@
 # Requirements for development.
 -r common.txt
+-r lint.txt
+-r docs.txt
+-r tests.txt
 wheel
 pre-commit
 Flask-DebugToolbar==0.10.1
 twine
 watchdog==0.10.3
-selenium==3.141.0
-tox
-pytest

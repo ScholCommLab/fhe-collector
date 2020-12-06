@@ -7,17 +7,14 @@ Copyright 2018 Stefan Kasberger
 Licensed under the MIT License.
 """
 import click
-from dotenv import load_dotenv
+import os
 from flask import Flask
 from flask.cli import with_appcontext
 from flask_migrate import Migrate
-import os
-
 from app.bp.api import blueprint as api_blueprint
 from app.bp.api.v1 import blueprint as api_v1_blueprint
 from app.bp.main import blueprint as main_blueprint
 from app.bp.main.errors import not_found_error, internal_error
-from app.config import get_config, get_config_name
 from app.db import (
     close_db,
     create_doi_lp_urls,
@@ -28,6 +25,7 @@ from app.db import (
     dev,
     drop_db,
     get_fb_data,
+    get_config,
     import_basedata,
     init_db,
 )
@@ -35,23 +33,14 @@ from app.models import db
 
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
-
-
 migrate = Migrate()
 
 
-def create_app(test_config: str = None) -> Flask:
+def create_app() -> Flask:
     """Create application and load settings."""
     print("* Start FHE Collector...")
 
-    if test_config is None:
-        load_dotenv()
-        config_name = get_config_name()
-    else:
-        config_name = test_config
-
-    config = get_config(config_name)
-
+    config = get_config()
     app = Flask("fhe_collector", root_path=ROOT_DIR)
     app.config.from_object(config)
     config.init_app(app)
@@ -64,12 +53,13 @@ def create_app(test_config: str = None) -> Flask:
     app.register_blueprint(main_blueprint)
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.register_blueprint(api_v1_blueprint, url_prefix="/api/v1")
+
     app.register_error_handler(404, not_found_error)
     app.register_error_handler(500, internal_error)
 
-    print(' * Settings "{0}" loaded'.format(config_name))
-    print(" * Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
+    print(' * Settings "{0}" loaded'.format(os.getenv("FLASK_CONFIG")))
     print(" * Environment: " + app.config["FLASK_ENV"])
+    print(" * Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
 
     return app
 
@@ -133,7 +123,7 @@ def reset_db_command() -> None:
 @click.argument("filename")
 @click.option("--reset", "-r", is_flag=True, help="Reset database before import.")
 @with_appcontext
-def import_basedata_command(filename, reset) -> None:
+def import_basedata_command(filename: str, reset: bool) -> None:
     """Delete all entries in all tables."""
     import_basedata(filename, reset)
     click.echo("Basedata imported.")

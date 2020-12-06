@@ -1,19 +1,19 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """API functions."""
-from flask import request, Blueprint
+from flask import jsonify, request, Blueprint
 
 
 blueprint = Blueprint("v1", __name__)
 
 
 @blueprint.route("/")
-def index():
+def index() -> None:
     return {"path": "add_data/", "name": "add_data"}
 
 
 @blueprint.route("/add_data", methods=["POST"])
-def add_data():
+def add_data() -> None:
     """Add data via an API endpoint to the database.
 
     Required: doi

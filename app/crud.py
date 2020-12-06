@@ -15,7 +15,7 @@ def get_first(db: Session, model: BaseModel, kwargs: dict) -> Query:
     return db.session.query(model).filter_by(**kwargs).first()
 
 
-def create_entity(db: Session, model: BaseModel, kwargs: dict) -> BaseModel:
+def create_entity(db: Session, model: BaseModel, kwargs: dict = {}) -> BaseModel:
     db_entity = model(**kwargs)
     db_entity.save(db)
     return db_entity

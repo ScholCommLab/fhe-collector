@@ -1,29 +1,33 @@
 import os
-from pydantic import BaseSettings, FilePath
+from pydantic import BaseSettings
 
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
 
 
 class Config(BaseSettings):
-    """
-    Setting the default environment settings.
-    """
+    """Setting the default environment settings."""
 
-    FLASK_ENV: str = "development"
-    TRAVIS: bool = False
+    SQLALCHEMY_DATABASE_URI: str = ""
+    FLASK_DEBUG: bool = False
     DEBUG: bool = False
+    TESTING: bool = False
+    TRAVIS: bool = False
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
-    API_TOKEN: str = None
-    ADMIN_EMAIL: str = None
-    APP_EMAIL: str = None
-    SECRET_KEY: str = "my-secret-key"
-    NCBI_TOOL: str = None
-    FB_APP_ID: str = None
-    FB_APP_SECRET: str = None
+    API_TOKEN: str = ""
+    ADMIN_EMAIL: str = ""
+    APP_EMAIL: str = ""
+    SECRET_KEY: str = ""
+    NCBI_TOOL: str = ""
+    FB_APP_ID: str = ""
+    FB_APP_SECRET: str = ""
     FB_HOURLY_RATELIMIT: int = 200
     FB_BATCH_SIZE: int = 50
     URL_BATCH_SIZE: int = 1000
+
+    class Config:
+        env_file = os.path.join(os.path.dirname(BASE_DIR), "env/.env")
 
     @staticmethod
     def init_app(app):
@@ -31,15 +35,18 @@ class Config(BaseSettings):
 
 
 class DevelopmentConfig(Config):
-    """
-    Setting the development environment settings.
+    """Setting the development environment settings.
+
     Database is sqlite file or a postgresql database string passed by an environment variable.
     """
 
     FLASK_ENV: str = "development"
+    FLASK_DEBUG: bool = True
     DEBUG: bool = True
     DEBUG_TB_INTERCEPT_REDIRECTS: bool = False
-    SQLALCHEMY_DATABASE_URI: str = "postgresql://localhost/fhe_collector_dev"
+
+    class Config:
+        env_file = os.path.join(ROOT_DIR, "env/development.env")
 
     @classmethod
     def init_app(cls, app):
@@ -51,28 +58,11 @@ class DevelopmentConfig(Config):
 
 
 class TestingConfig(Config):
-    TESTING = True
-    DEBUG: bool = False
-    SQLALCHEMY_DATABASE_URI: str = "postgresql://localhost/fhe_collector_test"
+    FLASK_ENV: str = "testing"
+    TESTING: bool = True
 
     class Config:
-        env_file = ".env.testing"
-
-    @classmethod
-    def init_app(cls, app):
-        Config.init_app(app)
-
-
-class TravisConfig(Config):
-    """
-    Setting the test environment settings.
-    """
-
-    TESTING = True
-    DEBUG: bool = False
-    TRAVIS = True
-    SQLALCHEMY_ECHO: bool = True
-    SQLALCHEMY_DATABASE_URI: str = "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
+        env_file = os.path.join(ROOT_DIR, "env/testing.env")
 
     @classmethod
     def init_app(cls, app):
@@ -80,12 +70,13 @@ class TravisConfig(Config):
 
 
 class ProductionConfig(Config):
-    """
-    Setting the production environment settings.
+    """Setting the production environment settings.
     """
 
     FLASK_ENV: str = "production"
-    SQLALCHEMY_DATABASE_URI: str = "postgresql://localhost/fhe_collector"
+
+    class Config:
+        env_file = os.path.join(ROOT_DIR, "env/production.env")
 
     @classmethod
     def init_app(cls, app):
@@ -114,8 +105,26 @@ class ProductionConfig(Config):
         app.logger.info("Facebook Hidden Engagement")
 
 
+class UnixConfig(ProductionConfig):
+    class Config:
+        env_file = os.path.join(ROOT_DIR, "env/production.env")
+
+    @classmethod
+    def init_app(cls, app):
+        ProductionConfig.init_app(app)
+
+        # log to syslog
+        import logging
+        from logging.handlers import SysLogHandler
+
+        syslog_handler = SysLogHandler()
+        syslog_handler.setLevel(logging.INFO)
+        app.logger.addHandler(syslog_handler)
+
+
 class DockerConfig(ProductionConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://localhost/fhe_collector"
+    class Config:
+        env_file = os.path.join(ROOT_DIR, "env/docker.env")
 
     @classmethod
     def init_app(cls, app):
@@ -131,40 +140,22 @@ class DockerConfig(ProductionConfig):
 
 
 class DockerComposeConfig(DockerConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:postgres@localhost/fhe_collector"
+    class Config:
+        env_file = os.path.join(ROOT_DIR, "env/docker.env")
 
     @classmethod
     def init_app(cls, app):
         DockerConfig.init_app(app)
 
 
-class UnixConfig(ProductionConfig):
-    @classmethod
-    def init_app(cls, app):
-        ProductionConfig.init_app(app)
-
-        # log to syslog
-        import logging
-        from logging.handlers import SysLogHandler
-
-        syslog_handler = SysLogHandler()
-        syslog_handler.setLevel(logging.INFO)
-        app.logger.addHandler(syslog_handler)
-
-
-def get_config_name():
-    return os.getenv("FLASK_CONFIG") or "default"
-
-
-def get_config(config_name="default"):
+def get_config_class(config_name="default"):
     configs = {
-        "development": DevelopmentConfig(),
-        "testing": TestingConfig(),
-        "production": ProductionConfig(),
-        "travis": TravisConfig(),
-        "docker": DockerConfig(),
-        "docker_compose": DockerComposeConfig(),
-        "unix": UnixConfig(),
-        "default": DevelopmentConfig(),
+        "development": DevelopmentConfig,
+        "testing": TestingConfig,
+        "production": ProductionConfig,
+        "docker": DockerConfig,
+        "docker_compose": DockerComposeConfig,
+        "unix": UnixConfig,
+        "default": DevelopmentConfig,
     }
     return configs[config_name]

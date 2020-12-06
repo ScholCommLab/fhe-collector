@@ -15,10 +15,7 @@ TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 def app():
     """Create and configure a new app instance for each test."""
     # create the app with common test config
-    if os.getenv("TRAVIS") or False:
-        app = create_app("travis")
-    else:
-        app = create_app("testing")
+    app = create_app()
 
     # create the database and load test data
     with app.app_context():
