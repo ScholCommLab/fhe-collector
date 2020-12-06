@@ -9,7 +9,8 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 class Config(BaseSettings):
     """Setting the default environment settings."""
 
-    SQLALCHEMY_DATABASE_URI: str = ""
+    SQLALCHEMY_DATABASE_URI: str
+    SECRET_KEY: str
     FLASK_DEBUG: bool = False
     DEBUG: bool = False
     TESTING: bool = False
@@ -18,7 +19,6 @@ class Config(BaseSettings):
     API_TOKEN: str = ""
     ADMIN_EMAIL: str = ""
     APP_EMAIL: str = ""
-    SECRET_KEY: str = ""
     NCBI_TOOL: str = ""
     FB_APP_ID: str = ""
     FB_APP_SECRET: str = ""

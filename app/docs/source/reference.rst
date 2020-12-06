@@ -1,3 +1,5 @@
+.. _reference:
+
 Reference / API
 =========================================
 
@@ -8,7 +10,7 @@ Reference / API
 Api Interface
 -----------------------------
 
-.. automodule:: app.api
+.. automodule:: app.bp.api
    :members:
 
 
@@ -17,7 +19,7 @@ Api Interface
 Main Interface
 -----------------------------
 
-.. automodule:: app.main
+.. automodule:: app.bp.main
   :members:
 
 
@@ -26,7 +28,7 @@ Main Interface
 Database Interface
 -----------------------------
 
-.. automodule:: app.database
+.. automodule:: app.db
   :inherited-members:
 
 

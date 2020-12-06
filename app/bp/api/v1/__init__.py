@@ -1,19 +1,19 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """API functions."""
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint, current_app
 
 
 blueprint = Blueprint("v1", __name__)
 
 
 @blueprint.route("/")
-def index() -> None:
+def index() -> dict:
     return {"path": "add_data/", "name": "add_data"}
 
 
 @blueprint.route("/add_data", methods=["POST"])
-def add_data() -> None:
+def add_data() -> str:
     """Add data via an API endpoint to the database.
 
     Required: doi
@@ -37,12 +37,12 @@ def add_data() -> None:
     if request.method == "POST":
         try:
             if "X-API-Key" in request.headers:
-                if app.config["API_TOKEN"] == request.headers["X-API-Key"]:
+                if current_app.config["API_TOKEN"] == request.headers["X-API-Key"]:
                     if request.headers["Content-Type"] == "application/json":
                         json_data = request.get_json()
                         if isinstance(json_data, list):
                             is_data_valid = True
-                            for entry in data:
+                            for entry in json_data:
                                 # Validate entry
                                 if "doi" in entry:
                                     if not isinstance(entry["doi"], str):
@@ -101,6 +101,6 @@ def add_data() -> None:
             else:
                 response = "Authentication token not passed."
         except:
-            response = "Undefined error."
+            raise ("Undefined error.")
 
         return jsonify({"status": response_status, "content": response})

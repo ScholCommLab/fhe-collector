@@ -6,3 +6,4 @@ git+https://github.com/pypa/pypa-docs-theme.git#egg=pypa-docs-theme
 pydocstyle
 restructuredtext_lint
 pygments
+rstcheck
