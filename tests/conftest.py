@@ -12,9 +12,10 @@ TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 @pytest.fixture
-def app():
+def app(monkeypatch):
     """Create and configure a new app instance for each test."""
     # create the app with common test config
+    monkeypatch.setenv("FLASK_CONFIG", "testing")
     app = create_app()
 
     # create the database and load test data

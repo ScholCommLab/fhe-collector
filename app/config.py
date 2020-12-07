@@ -9,8 +9,8 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 class Config(BaseSettings):
     """Setting the default environment settings."""
 
-    SQLALCHEMY_DATABASE_URI: str
-    SECRET_KEY: str
+    SQLALCHEMY_DATABASE_URI: str = ""
+    SECRET_KEY: str = ""
     FLASK_DEBUG: bool = False
     DEBUG: bool = False
     TESTING: bool = False
