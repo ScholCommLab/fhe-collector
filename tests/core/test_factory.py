@@ -10,12 +10,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__fil
 
 def test_config_development(monkeypatch):
     monkeypatch.setenv("FLASK_CONFIG", "development")
+    monkeypatch.setenv("SECRET_KEY", "secret-test-key")
     app = create_app()
 
     assert app.config["FLASK_ENV"] == "development"
     assert app.config["DEBUG"] is True
     assert not app.testing
     assert not app.config["TESTING"]
+    assert app.config["SECRET_KEY"] == "secret-test-key"
     assert isinstance(app.config["SQLALCHEMY_DATABASE_URI"], str)
     assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
     assert not app.config["DEBUG_TB_INTERCEPT_REDIRECTS"]

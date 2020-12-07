@@ -16,6 +16,12 @@ def app(monkeypatch):
     """Create and configure a new app instance for each test."""
     # create the app with common test config
     monkeypatch.setenv("FLASK_CONFIG", "testing")
+    if os.getenv("TRAVIS"):
+        monkeypatch.setenv(
+            "SQLALCHEMY_DATABASE_URI",
+            "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test",
+        )
+
     app = create_app()
 
     # create the database and load test data
