@@ -37,7 +37,8 @@ def test_config_testing(monkeypatch):
     assert app.config["DEBUG"] is False
     assert app.testing
     assert app.config["TESTING"]
-    assert app.config["SECRET_KEY"] == "secret-env-key"
+    if not os.getenv("TRAVIS"):
+        assert app.config["SECRET_KEY"] == "secret-env-key"
     assert (
         "postgresql://localhost/fhe_collector_test"
         == app.config["SQLALCHEMY_DATABASE_URI"]
@@ -73,7 +74,6 @@ def test_config_travis(monkeypatch):
     assert app.config["DEBUG"] is False
     assert not app.testing
     assert not app.config["TESTING"]
-    assert app.config["SECRET_KEY"] == "secret-env-key"
     assert (
         "postgresql+psycopg2://postgres@localhost:5432/travis_ci_test"
         == app.config["SQLALCHEMY_DATABASE_URI"]
