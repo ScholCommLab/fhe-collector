@@ -29,6 +29,7 @@ from app.utils import is_valid_doi
 
 
 def get_config():
+    """Get config."""
     config_name = os.getenv("FLASK_CONFIG") or "default"
     config_class = get_config_class(config_name)
 
@@ -41,7 +42,9 @@ def get_config():
 
 
 def get_db() -> SQLAlchemy:
-    """Connect to the application's configured database. The connection
+    """Connect to the application's configured database.
+
+    The connection
     is unique for each request and will be reused if this is called
     again.
     """
@@ -51,8 +54,9 @@ def get_db() -> SQLAlchemy:
 
 
 def close_db(e=None) -> None:
-    """If this request connected to the database, close the
-    connection.
+    """Close database connection.
+
+    If this request connected to the database, close the connection.
     """
     db = g.pop("db", None)
 
@@ -61,23 +65,24 @@ def close_db(e=None) -> None:
 
 
 def init_db() -> None:
-    """Conncet to database and create new tables."""
+    """Connect to database and create new tables."""
     db = get_db()
     db.create_all()
 
 
 def drop_db() -> None:
-
+    """Drop database."""
     db = get_db()
     db.drop_all()
 
 
 def dev() -> None:
+    """Develop functions."""
     pass
 
 
 def import_basedata(filename: str, reset: bool = False) -> dict:
-    """
+    """Import base data.
 
     * preprocess data
         * read csv to pandas df (header: doi,url,url_type,date_published)
@@ -92,6 +97,18 @@ def import_basedata(filename: str, reset: bool = False) -> dict:
         * do bulk import of dois with batch_size
         * create all dois and save ids in list of url dicts
         * do bulk import of urls with batch_size
+
+    Parameters
+    ----------
+    filename : str
+        Filename to CSV to be imported.
+    reset : bool, optional
+        Resets database, by default False
+
+    Returns
+    -------
+    dict
+        Dictionary with number of DOI's added, number or URL's added and list of invalid DOI's.
     """
     if reset:
         drop_db()
@@ -183,7 +200,7 @@ def create_doi_new_urls() -> None:
     url_list = [url.url for url in get_all(db, Url)]
 
     # get all DOIs, where url_doi_new = False
-    list_dois = Doi.query.filter(Doi.url_doi_new == False).all()
+    list_dois = Doi.query.filter(Doi.url_doi_new is False).all()
     print("Found DOI's: {0}".format(len(list_dois)))
 
     for i in range(0, len(list_dois), batch_size):
@@ -215,7 +232,7 @@ def create_doi_old_urls() -> None:
 
     url_list = [url.url for url in get_all(db, Url)]
 
-    list_dois = Doi.query.filter(Doi.url_doi_old == False).all()
+    list_dois = Doi.query.filter(Doi.url_doi_old is False).all()
     print("Found DOI's: {0}".format(len(list_dois)))
 
     for i in range(0, len(list_dois), batch_size):
@@ -240,16 +257,15 @@ def create_doi_lp_urls() -> None:
     """
     num_urls_added = 0
     num_requests_added = 0
-    urls_added = []
+    urls_added: list = []
 
     db = get_db()
-    config = get_config()
     # batch_size = config.URL_BATCH_SIZE # TODO: identify default and best practice values
     batch_size = 20
 
     url_list = [url.url for url in get_all(db, Url)]
 
-    list_dois = Doi.query.filter(Doi.url_doi_lp == False).all()
+    list_dois = Doi.query.filter(Doi.url_doi_lp is False).all()
     print("Found DOI's: {0}".format(len(list_dois)))
 
     for i in range(0, len(list_dois), batch_size):
@@ -307,7 +323,7 @@ def create_ncbi_urls() -> None:
 
     url_list = [url.url for url in get_all(db, Url)]
 
-    list_dois = Doi.query.filter(Doi.url_ncbi == False).all()
+    list_dois = Doi.query.filter(Doi.url_ncbi is False).all()
     print("Found DOI's: {0}".format(len(list_dois)))
 
     for i in range(0, len(list_dois), request_batch_size * doi_batch_size):
@@ -404,7 +420,7 @@ def create_unpaywall_urls() -> None:
 
     url_list = [url.url for url in get_all(db, Url)]
 
-    list_dois = Doi.query.filter(Doi.url_unpaywall == False).all()
+    list_dois = Doi.query.filter(Doi.url_unpaywall is False).all()
     print("Found DOI's: {0}".format(len(list_dois)))
 
     for i in range(0, len(list_dois), batch_size):
@@ -491,7 +507,6 @@ def get_fb_data() -> None:
                 "plugin_comments": response["engagement"]["comment_plugin_count"],
             }
             db_requests_added.append(req_dict)
-            num_fbrequests_added += 1
         create_entities(db, FBRequest, db_requests_added)
         num_fbrequests_added += len(db_requests_added)
     print(

@@ -3,9 +3,16 @@
 Reference / API
 =========================================
 
-.. module:: fhe_collector
+.. module:: fhe-collector
 
-.. _reference api:
+This part of the documentation covers all the interfaces / APIs of the FHE Collector modules.
+
+
+Where FHE Collector depends on external libraries, we document the most
+important right here and provide links to the canonical documentation outside of scope.
+
+
+.. _reference_api:
 
 Api Interface
 -----------------------------

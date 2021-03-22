@@ -15,6 +15,7 @@ from app.bp.api import blueprint as api_blueprint
 from app.bp.api.v1 import blueprint as api_v1_blueprint
 from app.bp.main import blueprint as main_blueprint
 from app.bp.main.errors import not_found_error, internal_error
+from app.config import get_config_class
 from app.db import (
     close_db,
     create_doi_lp_urls,
@@ -40,9 +41,9 @@ def create_app() -> Flask:
     """Create application and load settings."""
     print("* Start FHE Collector...")
 
-    config = get_config()
+    config = get_config_class(os.getenv("FLASK_CONFIG"))
     app = Flask("fhe_collector", root_path=ROOT_DIR)
-    app.config.from_object(config)
+    app.config.from_object(config())
     config.init_app(app)
 
     init_app(app)

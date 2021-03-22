@@ -8,14 +8,63 @@ from app.models import BaseModel
 
 
 def get_all(db: Session, model: BaseModel, skip: int = 0, limit: int = 100,) -> Query:
+    """Get all entries of a model.
+
+    Parameters
+    ----------
+    db : Session
+        SQLAlchemy session.
+    model : BaseModel
+        model
+    skip : int, optional
+        Number of entries to be skipped.
+    limit : int, optional
+        Number of entries to be limited to.
+
+    Returns
+    -------
+    Query
+        Query result.
+    """
+
     return db.session.query(model).offset(skip).limit(limit).all()
 
 
 def get_first(db: Session, model: BaseModel, kwargs: dict) -> Query:
+    """Get first entry of a model.
+
+    Parameters
+    ----------
+    db : Session
+        SQLAlchemy session.
+    model : BaseModel
+        model
+    kwargs : dict, optional
+
+    Returns
+    -------
+    Query
+        Query result.
+    """
     return db.session.query(model).filter_by(**kwargs).first()
 
 
 def create_entity(db: Session, model: BaseModel, kwargs: dict = {}) -> BaseModel:
+    """Create one entry of a model.
+
+    Parameters
+    ----------
+    db : Session
+        SQLAlchemy session.
+    model : BaseModel
+        model
+    kwargs : dict, optional
+
+    Returns
+    -------
+    BaseModel
+        model after entry is created.
+    """
     db_entity = model(**kwargs)
     db_entity.save(db)
     return db_entity
@@ -24,5 +73,23 @@ def create_entity(db: Session, model: BaseModel, kwargs: dict = {}) -> BaseModel
 def create_entities(
     db: Session, model: BaseModel, iterable: list, kwargs: dict = {},
 ) -> BaseModel:
+    """Create entities of a model.
+
+    Parameters
+    ----------
+    db : Session
+        SQLAlchemy session.
+    model : BaseModel
+        model
+    iterable : list
+        Iterable entries.
+    kwargs : dict, optional
+
+    Returns
+    -------
+    BaseModel
+        model after entries are created.
+
+    """
     db_entities = model.bulk_create(db, iterable, **kwargs)
     return db_entities

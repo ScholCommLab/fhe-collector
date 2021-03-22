@@ -11,9 +11,9 @@ matrix:
     - python:    3.8
       env:       TOXENV=py38
     - python:    3.6
-      env:       TOXENV=coverage
+      env:       TOXENV=docs
     - python:    3.6
-      env:       TOXENV=coveralls
+      env:       TOXENV=coverage
 
 branches:
   only:
@@ -21,6 +21,7 @@ branches:
     - develop
 
 before_install:
+  - echo $TRAVIS_PYTHON_VERSION
 
 services:
   - postgresql
@@ -28,8 +29,10 @@ services:
 install:
   - pip install --upgrade pip
   - pip install tox-travis
-  - pip install coverage
-  - pip install coveralls
+  - virtualenv --version
+  - easy_install --version
+  - pip --version
+  - tox --version
 
 before_script:
   - export FLASK_CONFIG=travis

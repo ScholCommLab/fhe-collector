@@ -1,4 +1,4 @@
-graft fhe_collector/data
-graft fhe_collector/static
-graft fhe_collector/templates
+graft app/bp
+graft app/static
+graft app/templates
 global-exclude *.pyc

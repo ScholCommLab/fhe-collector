@@ -2,8 +2,7 @@ import os
 from pydantic import BaseSettings
 
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
+ROOT_DIR = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
 
 
 class Config(BaseSettings):
@@ -11,23 +10,20 @@ class Config(BaseSettings):
 
     SQLALCHEMY_DATABASE_URI: str = ""
     SECRET_KEY: str = ""
-    FLASK_DEBUG: bool = False
-    DEBUG: bool = False
-    TESTING: bool = False
-    TRAVIS: bool = False
-    SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
-    API_TOKEN: str = ""
     ADMIN_EMAIL: str = ""
     APP_EMAIL: str = ""
     NCBI_TOOL: str = ""
+    FB_API_TOKEN: str = ""
     FB_APP_ID: str = ""
     FB_APP_SECRET: str = ""
     FB_HOURLY_RATELIMIT: int = 200
     FB_BATCH_SIZE: int = 50
     URL_BATCH_SIZE: int = 1000
-
-    class Config:
-        env_file = os.path.join(os.path.dirname(BASE_DIR), "env/.env")
+    FLASK_DEBUG: bool = False
+    DEBUG: bool = False
+    TESTING: bool = False
+    TRAVIS: bool = False
+    SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
 
     @staticmethod
     def init_app(app):
@@ -124,7 +120,7 @@ class UnixConfig(ProductionConfig):
 
 class DockerConfig(ProductionConfig):
     class Config:
-        env_file = os.path.join(ROOT_DIR, "env/docker.env")
+        env_file = os.path.join(ROOT_DIR, "env/production.env")
 
     @classmethod
     def init_app(cls, app):
@@ -141,7 +137,7 @@ class DockerConfig(ProductionConfig):
 
 class DockerComposeConfig(DockerConfig):
     class Config:
-        env_file = os.path.join(ROOT_DIR, "env/docker.env")
+        env_file = os.path.join(ROOT_DIR, "env/production.env")
 
     @classmethod
     def init_app(cls, app):

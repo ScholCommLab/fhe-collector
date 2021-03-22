@@ -1,7 +1,7 @@
 # Requirements for tests (pytest)
--r common.txt
 pytest-flask
 pytest-cov
 tox
 selenium==3.141.0
 Flask-DebugToolbar==0.10.1
+coveralls

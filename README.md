@@ -2,10 +2,6 @@
 
 # Facebook Hidden Engagement Microservice
 
-SHORT DESCRIPTION
+The Facebook Hidden Engagement Collector is a Flask application, which collects Facebook engagement metrics for scientific publication URL’s.
 
-Documentation: https://fhe-collector.readthedocs.io/
-
-Simon Fraser University - Scholarly Communication Lab
-
-Developed by [Stefan Kasberger](http://stefankasberger.at) and [Asura Enkhbayar](https://github.com/Bubblbu).
+**Find out more: [FHE Collector Documentation](https://fhe-collector.readthedocs.io)**

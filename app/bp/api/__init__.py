@@ -9,6 +9,7 @@ blueprint = Blueprint("api", __name__)
 
 @blueprint.route("/")
 def index() -> str:
+    """Get API root."""
     return jsonify(
         [
             {

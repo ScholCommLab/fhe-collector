@@ -64,11 +64,7 @@ INSTALL_REQUIREMENTS = [
     "pydantic==1.7.2",
 ]
 
-SETUP_REQUIREMENTS = []
-
 TESTS_REQUIREMENTS = []
-
-# TESTS_REQUIREMENTS =read_file("requirements/test.txt")
 
 CLASSIFIERS = [
     # How mature is this project? Common values are
@@ -90,8 +86,8 @@ CLASSIFIERS = [
 setup(
     author="Stefan Kasberger",
     author_email="mail@stefankasberger.at",
-    name="FHE Collector",
-    version=find_version("app/__init__.py"),
+    name="fhe-collector",
+    version=find_version("app", "__init__.py"),
     description="Facebook Hidden Engagement Microservice",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
@@ -101,10 +97,9 @@ setup(
     platforms=["OS Independent"],
     classifiers=CLASSIFIERS,
     install_requires=INSTALL_REQUIREMENTS,
-    packages=find_packages(),
-    setup_requires=SETUP_REQUIREMENTS,
+    packages=find_packages(exclude=("tests",)),
     tests_require=TESTS_REQUIREMENTS,
-    # cmdclass={"test": Tox},
+    cmdclass={"test": Tox},
     include_package_data=True,
     keywords=["flask", "facebook", "ncbi", "api", "doi", "Graph API"],
     zip_safe=False,
