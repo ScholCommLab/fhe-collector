@@ -8,6 +8,7 @@ ROOT_DIR = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
 class BaseConfig(BaseSettings):
     """Setting the default environment settings."""
 
+    FLASK_ENV: str
     SQLALCHEMY_DATABASE_URI: str = ""
     SECRET_KEY: str = ""
     ADMIN_EMAIL: str = ""

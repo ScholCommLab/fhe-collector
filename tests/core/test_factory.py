@@ -9,28 +9,23 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__fil
 
 
 def test_config_development(monkeypatch):
+    monkeypatch.setenv("FLASK_ENV", "development")
+    monkeypatch.setenv("SECRET_KEY", "secret-test-key")
+    app = create_app()
 
-    for ele in range(2):
-        if ele == 0:
-            monkeypatch.setenv("FLASK_CONFIG", "development")
-            monkeypatch.setenv("SECRET_KEY", "secret-test-key")
-        elif ele == 1:
-            monkeypatch.setenv("SECRET_KEY", "secret-test-key")
-        app = create_app()
-
-        assert app.config["FLASK_ENV"] == "development"
-        assert app.config["DEBUG"] is True
-        assert not app.testing
-        assert not app.config["TESTING"]
-        assert app.config["SECRET_KEY"] == "secret-test-key"
-        assert isinstance(app.config["SQLALCHEMY_DATABASE_URI"], str)
-        assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
-        assert not app.config["DEBUG_TB_INTERCEPT_REDIRECTS"]
-        assert "fhe_collector" == app.name
+    assert app.config["FLASK_ENV"] == "development"
+    assert app.config["DEBUG"] is True
+    assert not app.testing
+    assert not app.config["TESTING"]
+    assert app.config["SECRET_KEY"] == "secret-test-key"
+    assert isinstance(app.config["SQLALCHEMY_DATABASE_URI"], str)
+    assert not app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
+    assert not app.config["DEBUG_TB_INTERCEPT_REDIRECTS"]
+    assert "fhe_collector" == app.name
 
 
 def test_config_testing(monkeypatch):
-    monkeypatch.setenv("FLASK_CONFIG", "testing")
+    monkeypatch.setenv("FLASK_ENV", "testing")
     app = create_app()
 
     assert app.config["FLASK_DEBUG"] is False
@@ -59,7 +54,7 @@ def test_config_testing(monkeypatch):
 
 
 def test_config_travis(monkeypatch):
-    monkeypatch.setenv("FLASK_CONFIG", "testing")
+    monkeypatch.setenv("FLASK_ENV", "testing")
     monkeypatch.setenv("TESTING", "false")
     monkeypatch.setenv(
         "SQLALCHEMY_DATABASE_URI",
@@ -94,7 +89,7 @@ def test_config_travis(monkeypatch):
 
 
 def test_config_production(monkeypatch):
-    monkeypatch.setenv("FLASK_CONFIG", "production")
+    monkeypatch.setenv("FLASK_ENV", "production")
     app = create_app()
 
     assert app.config["FLASK_ENV"] == "production"
