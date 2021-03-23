@@ -5,7 +5,7 @@ from pydantic import BaseSettings
 ROOT_DIR = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
 
 
-class Config(BaseSettings):
+class BaseConfig(BaseSettings):
     """Setting the default environment settings."""
 
     SQLALCHEMY_DATABASE_URI: str = ""
@@ -20,7 +20,6 @@ class Config(BaseSettings):
     FB_BATCH_SIZE: int = 50
     URL_BATCH_SIZE: int = 1000
     FLASK_DEBUG: bool = False
-    DEBUG: bool = False
     TESTING: bool = False
     TRAVIS: bool = False
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
@@ -30,31 +29,30 @@ class Config(BaseSettings):
         pass
 
 
-class DevelopmentConfig(Config):
+class DevelopmentConfig(BaseConfig):
     """Setting the development environment settings.
 
     Database is sqlite file or a postgresql database string passed by an environment variable.
     """
 
-    FLASK_ENV: str = "development"
     FLASK_DEBUG: bool = True
-    DEBUG: bool = True
     DEBUG_TB_INTERCEPT_REDIRECTS: bool = False
+    FLASK_RUN_EXTRA_FILES: str = "app/templates/"
 
     class Config:
         env_file = os.path.join(ROOT_DIR, "env/development.env")
 
     @classmethod
     def init_app(cls, app):
-        Config.init_app(app)
+        BaseConfig.init_app(app)
 
         from flask_debugtoolbar import DebugToolbarExtension
 
         DebugToolbarExtension(app)
 
 
-class TestingConfig(Config):
-    FLASK_ENV: str = "testing"
+class TestingConfig(BaseConfig):
+
     TESTING: bool = True
 
     class Config:
@@ -62,21 +60,19 @@ class TestingConfig(Config):
 
     @classmethod
     def init_app(cls, app):
-        Config.init_app(app)
+        BaseConfig.init_app(app)
 
 
-class ProductionConfig(Config):
+class ProductionConfig(BaseConfig):
     """Setting the production environment settings.
     """
-
-    FLASK_ENV: str = "production"
 
     class Config:
         env_file = os.path.join(ROOT_DIR, "env/production.env")
 
     @classmethod
     def init_app(cls, app):
-        Config.init_app(app)
+        BaseConfig.init_app(app)
 
         # email errors to the administrators
         import logging

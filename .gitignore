@@ -143,3 +143,4 @@ app/docs/build
 app/docs/Makefile
 Pipfile.lock
 logs/
+node_modules/

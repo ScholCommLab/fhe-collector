@@ -41,8 +41,9 @@ def create_app() -> Flask:
     """Create application and load settings."""
     print("* Start FHE Collector...")
 
-    config = get_config_class(os.getenv("FLASK_CONFIG"))
     app = Flask("fhe_collector", root_path=ROOT_DIR)
+    env_name = os.getenv("FLASK_ENV")
+    config = get_config_class(env_name)
     app.config.from_object(config())
     config.init_app(app)
 
@@ -58,9 +59,10 @@ def create_app() -> Flask:
     app.register_error_handler(404, not_found_error)
     app.register_error_handler(500, internal_error)
 
-    print(' * Settings "{0}" loaded'.format(os.getenv("FLASK_CONFIG")))
-    print(" * Environment: " + app.config["FLASK_ENV"])
-    print(" * Database: " + app.config["SQLALCHEMY_DATABASE_URI"])
+    print(f" * Environment: {env_name}")
+    if app.config["DEBUG"]:
+        print(f" * Debug: On")
+    print(f" * Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
     return app
 
