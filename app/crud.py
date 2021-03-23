@@ -3,11 +3,17 @@
 """"""
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.query import Query
+from typing import Type, Union
 
-from app.models import BaseModel
+from app.models import Import, Doi, Url, Request, FBRequest
 
 
-def get_all(db: Session, model: BaseModel, skip: int = 0, limit: int = 100,) -> Query:
+DatabaseModels = Type[Union[Import, Doi, Url, Request, FBRequest]]
+
+
+def get_all(
+    db: Session, model: DatabaseModels, skip: int = 0, limit: int = 100,
+) -> Query:
     """Get all entries of a model.
 
     Parameters
@@ -30,7 +36,7 @@ def get_all(db: Session, model: BaseModel, skip: int = 0, limit: int = 100,) -> 
     return db.session.query(model).offset(skip).limit(limit).all()
 
 
-def get_first(db: Session, model: BaseModel, kwargs: dict) -> Query:
+def get_first(db: Session, model: DatabaseModels, kwargs: dict) -> Query:
     """Get first entry of a model.
 
     Parameters
@@ -49,7 +55,9 @@ def get_first(db: Session, model: BaseModel, kwargs: dict) -> Query:
     return db.session.query(model).filter_by(**kwargs).first()
 
 
-def create_entity(db: Session, model: BaseModel, kwargs: dict = {}) -> BaseModel:
+def create_entity(
+    db: Session, model: DatabaseModels, kwargs: dict = {}
+) -> DatabaseModels:
     """Create one entry of a model.
 
     Parameters
@@ -71,8 +79,8 @@ def create_entity(db: Session, model: BaseModel, kwargs: dict = {}) -> BaseModel
 
 
 def create_entities(
-    db: Session, model: BaseModel, iterable: list, kwargs: dict = {},
-) -> BaseModel:
+    db: Session, model: DatabaseModels, iterable: list, kwargs: dict = {},
+) -> DatabaseModels:
     """Create entities of a model.
 
     Parameters
