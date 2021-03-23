@@ -15,7 +15,7 @@ TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 def app(monkeypatch):
     """Create and configure a new app instance for each test."""
     # create the app with common test config
-    monkeypatch.setenv("FLASK_CONFIG", "testing")
+    monkeypatch.setenv("FLASK_ENV", "testing")
     if os.getenv("TRAVIS"):
         monkeypatch.setenv(
             "SQLALCHEMY_DATABASE_URI",
