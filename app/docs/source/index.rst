@@ -78,7 +78,7 @@ Install
 
 .. code-block:: shell
 
-    pip install fhe-collector
+    pip install fhe_collector
 
 
 Find more options at :ref:`user_installation`.
@@ -170,7 +170,7 @@ Open Source projects in general live from the cooperation of the many and it's p
 standing on the shoulders of so many contributors, so to say thanks is the
 least that can be done.
 
-FHE Collector is funded by Simon Fraser University - `Scholarly Communication Lab <https://www.scholcommlab.ca/>`_
+FHE Collector is funded by `Simon Fraser University - Scholarly Communication Lab <https://www.scholcommlab.ca/>`_
 
 
 .. _homepage_license:
@@ -178,14 +178,10 @@ FHE Collector is funded by Simon Fraser University - `Scholarly Communication La
 License
 -----------------------------
 
-Copyright Stefan Kasberger and others, 2018.
+Copyright Stefan Kasberger and others, 2021.
 
 Distributed under the terms of the MIT license, FHE Collector is free and open source software.
 
 Full License Text: `LICENSE.txt <https://github.com/ScholCommLab/fhe-collector/blob/master/LICENSE.txt>`_
 
 The documentation is licensed under `CC BY 4.0 <https://creativecommons.org/licenses/by/4.0/>`_.
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:

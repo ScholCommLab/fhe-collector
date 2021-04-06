@@ -12,13 +12,14 @@ FHE Collector
 - Working document for the integration of Facebook-OJS into CED: (`GDoc <https://docs.google.com/document/d/10gjV8A8UgDOOM52ByTsaAvgzqLZtC2b6c_pnDEzBraI/edit?usp=sharing>`_))
 - Code base for collecting URLs and engagement: `fhe-plos <https://github.com/ScholCommLab/fhe-plos>`_
 - Facebook Graph API
+
   - `Docs <https://facebook-sdk.readthedocs.io/en/latest/api.html>`_
   - Request `URL /?id={url} <https://developers.facebook.com/docs/graph-api/reference/v3.2/url>`_
   - `Graph API restrictions <https://newsroom.fb.com/news/2018/04/restricting-data-access/>`_
   - `Rate limiting <https://developers.facebook.com/docs/graph-api/advanced/rate-limiting/>`_
   - `Debug <https://developers.facebook.com/tools/debug/>`_
   - `Explorer <https://developers.facebook.com/tools/explorer/>`_
-  - Python module: `facebook-sdk <https://facebook-sdk.readthedocs.io/`> (`API Reference <https://facebook-sdk.readthedocs.io/en/latest/api.html>`_)
+  - Python module: `facebook-sdk <https://facebook-sdk.readthedocs.io/>`_ (`API Reference <https://facebook-sdk.readthedocs.io/en/latest/api.html>`_)
 
 
 .. _user_resources_literature:

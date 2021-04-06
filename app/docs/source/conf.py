@@ -23,7 +23,7 @@ import app
 
 # -- Project information -----------------------------------------------------
 
-project = app.__name__
+project = app.__project__
 copyright = app.__copyright__
 author = app.__author__
 description = app.__description__
