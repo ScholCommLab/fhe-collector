@@ -23,7 +23,7 @@ import app
 
 # -- Project information -----------------------------------------------------
 
-project = app.__name__
+project = app.__project__
 copyright = app.__copyright__
 author = app.__author__
 description = app.__description__
@@ -119,13 +119,28 @@ html_static_path = ["_static"]
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = {
+    "index": [
+        "sidebar_intro.html",
+        "navigation.html",
+        "sidebar_related-links.html",
+        "sourcelink.html",
+        "searchbox.html",
+    ],
+    "**": [
+        "sidebar_intro.html",
+        "navigation.html",
+        "sidebar_related-links.html",
+        "sourcelink.html",
+        "searchbox.html",
+    ],
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "fhe_collector"
+htmlhelp_basename = "fhe-collector"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -151,8 +166,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "fhe_collector.tex",
-        "fhe\\_collector Documentation",
+        "fhe-collector.tex",
+        "FHE Collector Documentation",
         "Public Knowledge Project",
         "manual",
     ),
@@ -163,7 +178,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "fhe_collector", "fhe_collector Documentation", [author], 1)]
+man_pages = [(master_doc, "fhe-collector", "FHE Collector Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -174,15 +189,14 @@ man_pages = [(master_doc, "fhe_collector", "fhe_collector Documentation", [autho
 texinfo_documents = [
     (
         master_doc,
-        "fhe_collector",
-        "fhe_collector Documentation",
+        "fhe-collector",
+        "fhe-collector Documentation",
         author,
-        "fhe_collector",
+        "fhe-collector",
         description,
         "Miscellaneous",
     ),
 ]
-
 
 # -- Extension configuration -------------------------------------------------
 
@@ -190,4 +204,5 @@ texinfo_documents = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
+    "requests": ("https://requests.readthedocs.io/en/master", None),
 }

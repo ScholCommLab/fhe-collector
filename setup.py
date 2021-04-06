@@ -86,7 +86,7 @@ CLASSIFIERS = [
 setup(
     author="Stefan Kasberger",
     author_email="mail@stefankasberger.at",
-    name="fhe-collector",
+    name="fhecollector",
     version=find_version("app", "__init__.py"),
     description="Facebook Hidden Engagement Microservice",
     long_description=read_file("README.md"),
