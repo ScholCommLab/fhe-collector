@@ -99,6 +99,9 @@ Quickstart
 Features
 -----------------------------
 
+- API requests: DOI, NCBI, PM, PMC, Unpaywall, Facebook Open Graph
+- Import and export of collected data
+- API
 - Python >=3.6
 - Tested (`Travis CI <https://travis-ci.org/ScholCommLab/fhe-collector>`_) and documented (`Read the Docs <https://fhe-collector.readthedocs.io>`_)
 - Open Source (`MIT <https://opensource.org/licenses/MIT>`_)
@@ -113,7 +116,6 @@ User Guide
    :maxdepth: 3
 
    user/installation
-   user/basic-usage
    user/resources
 
 
@@ -141,7 +143,6 @@ FHE Collector ecosystem and community.
 .. toctree::
    :maxdepth: 1
 
-   community/faq
    community/contact
    community/releases
 

@@ -423,6 +423,32 @@ type hints. After making any change you can ensure your type hints are correct b
   mypy app/file_changed.py
 
 
+.. _contributing_code_gulp:
+
+Browsersync with gulp
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To sync the browser after file-changes we use
+`gulp.js <https://gulpjs.com/>`_ together with 
+`browsersync <https://www.browsersync.io/>`_.
+
+First, install the required node packages with
+
+.. code-block:: shell
+
+  npm install
+
+
+Then you can run the task with
+
+.. code-block:: shell
+
+  gulp
+
+This should start the Flask server, proxying to
+`localhost:3000 <http://localhost:3000>`_
+and watching file-changes.
+
 .. _contributing_code_testing-with-ci:
 
 Testing with continuous integration
