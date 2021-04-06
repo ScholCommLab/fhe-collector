@@ -129,18 +129,17 @@ dmypy.json
 .pyre/
 
 # Personal
-env/
-app/static/import/*
-app/static/export/*
-internal/
+/internal/
+/env-config/
+/app/static/import/*
+/app/static/export/*
+/app/docs/build
+/app/docs/Makefile
+/migrations/script.py.mako
+/migrations/README
+/migrations/env.py
+/migrations/alembic.ini
+/docs/
+/logs/
 *.sqlite3
-migrations/script.py.mako
-migrations/README
-migrations/env.py
-migrations/alembic.ini
-docs/
-app/docs/build
-app/docs/Makefile
-Pipfile.lock
-logs/
-node_modules/
+/node_modules/
