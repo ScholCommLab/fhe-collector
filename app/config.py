@@ -1,4 +1,7 @@
 import os
+from typing import Type
+from typing import Union
+
 from pydantic import BaseSettings
 
 
@@ -141,7 +144,26 @@ class DockerComposeConfig(DockerConfig):
         DockerConfig.init_app(app)
 
 
-def get_config_class(config_name="default"):
+ConfigTypes: Type[
+    Union[
+        DevelopmentConfig,
+        TestingConfig,
+        ProductionConfig,
+        UnixConfig,
+        DockerConfig,
+        DockerComposeConfig,
+    ]
+] = Union[
+    DevelopmentConfig,
+    TestingConfig,
+    ProductionConfig,
+    UnixConfig,
+    DockerConfig,
+    DockerComposeConfig,
+]
+
+
+def get_config_class(config_name: str = "default") -> ConfigTypes:
     configs = {
         "development": DevelopmentConfig,
         "testing": TestingConfig,
