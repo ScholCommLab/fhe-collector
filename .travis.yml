@@ -1,26 +1,46 @@
-sudo: false
+language:        python
+cache:           pip
+dist:            xenial
 
-language: python
+matrix:
+  include:
+    - python:    3.6
+      env:       TOXENV=py36
+    - python:    3.7
+      env:       TOXENV=py37
+    - python:    3.8
+      env:       TOXENV=py38
+    - python:    3.6
+      env:       TOXENV=docs
+    - python:    3.6
+      env:       TOXENV=coveralls
 
-python:
-  - "2.7"
-  - "3.5"
-
-services: postgresql
+branches:
+  only:
+    - master
+    - develop
 
 before_install:
-  - export ENV=testing
+  - echo $TRAVIS_PYTHON_VERSION
+
+services:
+  - postgresql
 
 install:
-  - "pip install -r requirements.txt"
+  - pip install --upgrade pip
+  - pip install tox-travis
+  - virtualenv --version
+  - easy_install --version
+  - pip --version
+  - tox --version
 
 before_script:
-  - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe.py"
+  - export FLASK_CONFIG=travis
+  - export FLASK_APP="$TRAVIS_BUILD_DIR/fhe_collector"
   - psql -c "CREATE DATABASE travis_ci_test;" -U postgres
-  - export FLASK_DEBUG=1
 
 script:
-  - pytest --doctest-modules --cov=app --cov-report term-missing tests/
+  - tox
 
 after_success:
   - coveralls
@@ -29,5 +49,4 @@ notifications:
   email:
     recipients:
       - mail@stefankasberger.at
-    on_success: never
-    on_failure: always
+    on_success: change
