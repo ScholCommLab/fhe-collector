@@ -1,8 +1,10 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Test API."""
-from flask import request, jsonify
 from json import loads
+
+from flask import jsonify
+from flask import request
 
 
 def api_add_data_response():

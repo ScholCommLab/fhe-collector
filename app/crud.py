@@ -1,11 +1,17 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """"""
+from typing import Type
+from typing import Union
+
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.query import Query
-from typing import Type, Union
 
-from app.models import Import, Doi, Url, Request, FBRequest
+from app.models import Doi
+from app.models import FBRequest
+from app.models import Import
+from app.models import Request
+from app.models import Url
 
 
 DatabaseModels = Type[Union[Import, Doi, Url, Request, FBRequest]]

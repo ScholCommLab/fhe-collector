@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test factory."""
 import os
+
 from app.main import create_app
 
 

@@ -1,9 +1,11 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Database functions."""
+import os
 from datetime import datetime
 from json import dumps
-import os
+from typing import List
+
 from flask import g
 from flask_sqlalchemy import SQLAlchemy
 from pandas import read_csv
@@ -14,7 +16,7 @@ try:
 except ImportError:
     from urlparse import quote
 
-from app.config import get_config_class
+from app.config import get_config_class, ConfigTypes
 from app.crud import create_entity, create_entities, get_all
 from app.models import db, Doi, Import, Url, Request, FBRequest
 from app.requests import (
@@ -28,7 +30,7 @@ from app.requests import (
 from app.utils import is_valid_doi
 
 
-def get_config():
+def get_config() -> ConfigTypes:
     """Get config."""
     config_name = os.getenv("FLASK_CONFIG") or "default"
     config_class = get_config_class(config_name)
@@ -312,7 +314,7 @@ def create_ncbi_urls() -> None:
     num_urls_pm_added = 0
     num_urls_pmc_added = 0
     num_requests_added = 0
-    urls_added = []
+    urls_added: List[str] = []
 
     db = get_db()
     config = get_config()

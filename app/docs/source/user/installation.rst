@@ -23,10 +23,10 @@ Installer requirements: `setuptools <https://pypi.org/project/setuptools>`_
 
 **PostgreSQL**
 
-First, setup a postgreSQL instance on your computer. Please look for 
+First, setup a postgreSQL instance on your computer. Please look for
 more information at the `PostgreSQL Website <https://www.postgresql.org>`_.
 
-After you have set up PostgreSQL, you have to create a database for the app and give 
+After you have set up PostgreSQL, you have to create a database for the app and give
 your default user the full rights to it. In Ubuntu/Linux this works like this:
 
 .. code-block:: shell

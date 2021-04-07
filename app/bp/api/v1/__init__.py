@@ -1,7 +1,10 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """API functions."""
-from flask import jsonify, request, Blueprint, current_app
+from flask import Blueprint
+from flask import current_app
+from flask import jsonify
+from flask import request
 
 
 blueprint = Blueprint("v1", __name__)
@@ -9,6 +12,7 @@ blueprint = Blueprint("v1", __name__)
 
 @blueprint.route("/")
 def index() -> dict:
+    """Return index."""
     return {"path": "add_data/", "name": "add_data"}
 
 
@@ -86,6 +90,7 @@ def add_data() -> str:
                                     is_data_valid = False
                                     response = "DOI is missing in {}.".format(entry)
                             if is_data_valid:
+                                # TODO: import_dois_from_api
                                 resp_func = import_dois_from_api(data)
                                 if resp_func:
                                     response = resp_func

@@ -219,7 +219,7 @@ you created the branch, check the section on
 :ref:`updating a PR <contributing_changes_update-pull-request>`.
 
 
-From here, you now can move forward to 
+From here, you now can move forward to
 
 - contribute to the documentation (see below)
 - contribute to the :ref:`code base <contributing_code>`
@@ -429,7 +429,7 @@ Browsersync with gulp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To sync the browser after file-changes we use
-`gulp.js <https://gulpjs.com/>`_ together with 
+`gulp.js <https://gulpjs.com/>`_ together with
 `browsersync <https://www.browsersync.io/>`_.
 
 First, install the required node packages with

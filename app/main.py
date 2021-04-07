@@ -6,30 +6,31 @@ Copyright 2018 Stefan Kasberger
 
 Licensed under the MIT License.
 """
-import click
 import os
+
+import click
 from flask import Flask
 from flask.cli import with_appcontext
 from flask_migrate import Migrate
+
 from app.bp.api import blueprint as api_blueprint
 from app.bp.api.v1 import blueprint as api_v1_blueprint
 from app.bp.main import blueprint as main_blueprint
-from app.bp.main.errors import not_found_error, internal_error
+from app.bp.main.errors import internal_error
+from app.bp.main.errors import not_found_error
 from app.config import get_config_class
-from app.db import (
-    close_db,
-    create_doi_lp_urls,
-    create_doi_new_urls,
-    create_doi_old_urls,
-    create_ncbi_urls,
-    create_unpaywall_urls,
-    dev,
-    drop_db,
-    get_fb_data,
-    get_config,
-    import_basedata,
-    init_db,
-)
+from app.db import close_db
+from app.db import create_doi_lp_urls
+from app.db import create_doi_new_urls
+from app.db import create_doi_old_urls
+from app.db import create_ncbi_urls
+from app.db import create_unpaywall_urls
+from app.db import dev
+from app.db import drop_db
+from app.db import get_config
+from app.db import get_fb_data
+from app.db import import_basedata
+from app.db import init_db
 from app.models import db
 
 

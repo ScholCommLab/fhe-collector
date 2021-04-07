@@ -1,9 +1,9 @@
-# Requirements for development.
 -r common.txt
--r lint.txt
 -r docs.txt
+-r lint.txt
+-r packaging.txt
 -r tests.txt
-wheel
-pre-commit
 Flask-DebugToolbar==0.10.1
+pre-commit
 watchdog==0.10.3
+wheel

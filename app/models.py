@@ -1,7 +1,9 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ORM Models."""
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
+
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 
