@@ -1,15 +1,19 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ORM Models."""
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
+
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.model import DefaultMeta
 from sqlalchemy.exc import IntegrityError
 
 
 db = SQLAlchemy()
+BaseModelType: DefaultMeta = db.Model
 
 
-class BaseModel(db.Model):
+class BaseModel(BaseModelType):
     __abstract__ = True
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

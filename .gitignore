@@ -129,7 +129,8 @@ dmypy.json
 .pyre/
 
 # Personal
-/internal/
+notes*.md
+internal
 /env-config/
 /app/static/import/*
 /app/static/export/*
@@ -143,3 +144,7 @@ dmypy.json
 /logs/
 *.sqlite3
 /node_modules/
+.pypirc
+*.code-workspace
+.python-version
+env/

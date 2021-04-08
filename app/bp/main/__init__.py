@@ -2,11 +2,17 @@
 # -*- coding: utf-8 -*-
 """main functions."""
 from flask import Blueprint
-from flask import render_template, current_app
+from flask import current_app
+from flask import render_template
 from flask_sqlalchemy import get_debug_queries
+from requests import Response
 
 from app.db import get_db
-from app.models import Doi, Import, Url, Request, FBRequest
+from app.models import Doi
+from app.models import FBRequest
+from app.models import Import
+from app.models import Request
+from app.models import Url
 
 
 blueprint = Blueprint("main", __name__)
@@ -14,13 +20,13 @@ blueprint = Blueprint("main", __name__)
 
 @blueprint.route("/")
 @blueprint.route("/index")
-def index() -> None:
+def index() -> str:
     """Homepage."""
     return render_template("index.html", title="Home")
 
 
 @blueprint.route("/stats")
-def stats() -> None:
+def stats() -> str:
     """Statistics."""
     db = get_db()
     data = {
@@ -67,7 +73,7 @@ def stats() -> None:
 
 
 @blueprint.after_app_request
-def after_request(response) -> None:
+def after_request(response) -> Response:
     for query in get_debug_queries():
         if query.duration >= 0.5:
             current_app.logger.warning(

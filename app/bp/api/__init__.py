@@ -1,7 +1,8 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """API functions."""
-from flask import jsonify, Blueprint
+from flask import Blueprint
+from flask import jsonify
 
 
 blueprint = Blueprint("api", __name__)

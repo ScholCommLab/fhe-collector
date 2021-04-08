@@ -1,44 +1,49 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Database functions."""
+import os
 from datetime import datetime
 from json import dumps
-import os
+from typing import Any
+from typing import List
+from urllib.parse import quote
+
 from flask import g
 from flask_sqlalchemy import SQLAlchemy
 from pandas import read_csv
 from tqdm import tqdm
 
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urlparse import quote
-
 from app.config import get_config_class
-from app.crud import create_entity, create_entities, get_all
-from app.models import db, Doi, Import, Url, Request, FBRequest
-from app.requests import (
-    request_doi_landingpage,
-    request_ncbi_api,
-    request_unpaywall_api,
-    get_graph_api,
-    get_graph_api_urls,
-    get_graph_api_token,
-)
+from app.crud import create_entities
+from app.crud import create_entity
+from app.crud import get_all
+from app.models import db
+from app.models import Doi
+from app.models import FBRequest
+from app.models import Import
+from app.models import Request
+from app.models import Url
+from app.requests import get_graph_api
+from app.requests import get_graph_api_token
+from app.requests import get_graph_api_urls
+from app.requests import request_doi_landingpage
+from app.requests import request_ncbi_api
+from app.requests import request_unpaywall_api
 from app.utils import is_valid_doi
 
 
-def get_config():
+DATABASE = db
+
+
+def get_config() -> Any:
     """Get config."""
     config_name = os.getenv("FLASK_CONFIG") or "default"
     config_class = get_config_class(config_name)
 
     if os.getenv("ENV_FILE"):
-        config = config_class(_env_file=os.getenv("ENV_FILE"))
+        return config_class(_env_file=os.getenv("ENV_FILE"))
     else:
-        config = config_class()
-
-    return config
+        return config_class()
 
 
 def get_db() -> SQLAlchemy:
@@ -49,7 +54,7 @@ def get_db() -> SQLAlchemy:
     again.
     """
     if "db" not in g:
-        g.db = db
+        g.db = DATABASE
     return g.db
 
 
@@ -66,14 +71,14 @@ def close_db(e=None) -> None:
 
 def init_db() -> None:
     """Connect to database and create new tables."""
-    db = get_db()
-    db.create_all()
+    database = get_db()
+    database.create_all()
 
 
 def drop_db() -> None:
     """Drop database."""
-    db = get_db()
-    db.drop_all()
+    database = get_db()
+    database.drop_all()
 
 
 def dev() -> None:
@@ -312,7 +317,7 @@ def create_ncbi_urls() -> None:
     num_urls_pm_added = 0
     num_urls_pmc_added = 0
     num_requests_added = 0
-    urls_added = []
+    urls_added: List[str] = []
 
     db = get_db()
     config = get_config()
@@ -410,15 +415,15 @@ def create_unpaywall_urls() -> None:
     """
     num_urls_unpaywall_added = 0
     num_requests_added = 0
-    urls_added = []
+    urls_added: List[str] = []
 
-    db = get_db()
+    database = get_db()
     config = get_config()
     # batch_size = config.URL_BATCH_SIZE # TODO: identify default and best practice values
     email = config.APP_EMAIL
     batch_size = 20
 
-    url_list = [url.url for url in get_all(db, Url)]
+    url_list = [url.url for url in get_all(database, Url)]
 
     list_dois = Doi.query.filter(Doi.url_unpaywall is False).all()
     print("Found DOI's: {0}".format(len(list_dois)))
@@ -466,8 +471,8 @@ def create_unpaywall_urls() -> None:
                     url_dict = {"url": url, "doi": row.doi, "url_type": url_type}
                     urls_added.append(url)
                     db_urls_added.append(url_dict)
-        create_entities(db, Request, db_requests_added)
-        create_entities(db, Url, db_urls_added)
+        create_entities(database, Request, db_requests_added)
+        create_entities(database, Url, db_urls_added)
         num_urls_unpaywall_added += len(db_urls_added)
         num_requests_added += len(db_requests_added)
     print('{0} "Unpaywall" URL\'s added to database.'.format(num_urls_unpaywall_added))

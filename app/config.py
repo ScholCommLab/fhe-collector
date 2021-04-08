@@ -1,4 +1,7 @@
 import os
+from typing import Any
+
+from flask import Flask
 from pydantic import BaseSettings
 
 
@@ -44,7 +47,7 @@ class DevelopmentConfig(BaseConfig):
         env_file = os.path.join(ROOT_DIR, "env/development.env")
 
     @classmethod
-    def init_app(cls, app):
+    def init_app(cls, app: Flask):
         BaseConfig.init_app(app)
 
         from flask_debugtoolbar import DebugToolbarExtension
@@ -141,8 +144,8 @@ class DockerComposeConfig(DockerConfig):
         DockerConfig.init_app(app)
 
 
-def get_config_class(config_name="default"):
-    configs = {
+def get_config_class(config_name: str = "default",) -> Any:
+    configs: dict = {
         "development": DevelopmentConfig,
         "testing": TestingConfig,
         "production": ProductionConfig,

@@ -1,6 +1,8 @@
 from app.db import get_db
 from app.main import create_app
-from app.models import Url, Doi, FBRequest
+from app.models import Doi
+from app.models import FBRequest
+from app.models import Url
 
 
 app = create_app()

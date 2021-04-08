@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 """Request functions."""
 from json import loads
+
 from facebook import GraphAPI
-from requests import get, post, Response
+from requests import get
+from requests import post
+from requests import Response
 from requests.exceptions import RequestException
 from requests.packages.urllib3 import disable_warnings
 from requests.packages.urllib3.exceptions import InsecureRequestWarning

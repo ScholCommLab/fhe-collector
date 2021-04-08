@@ -1,9 +1,16 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Helper functions."""
-from csv import reader, writer, DictReader, DictWriter
-from json import dump, dumps, load
 import re
+from csv import DictReader
+from csv import DictWriter
+from csv import reader
+from csv import writer
+from json import dump
+from json import dumps
+from json import load
+from typing import Iterator
+from typing import List
 
 
 def read_file(filename: str, mode: str = "r", encoding: str = "utf-8") -> str:
@@ -107,7 +114,7 @@ def read_csv(
     delimiter: str = ",",
     quotechar: str = '"',
     encoding: str = "utf-8",
-) -> reader:
+) -> Iterator[List[str]]:
     """Read in a CSV file.
 
     See more at `csv <https://docs.python.org/3/library/csv.html>`_.
@@ -165,9 +172,9 @@ def write_csv(
 
     """
     with open(filename, "w", newline=newline, encoding=encoding) as csvfile:
-        writer = writer(csvfile, delimiter=delimiter, quotechar=quotechar)
+        csv_writer = writer(csvfile, delimiter=delimiter, quotechar=quotechar)
         for row in data:
-            writer.writerow(row)
+            csv_writer.writerow(row)
 
 
 def read_csv_as_dicts(
@@ -176,7 +183,7 @@ def read_csv_as_dicts(
     delimiter: str = ",",
     quotechar: str = '"',
     encoding: str = "utf-8",
-) -> list:
+) -> List[dict]:
     """Read in CSV file into a list of :class:`dict`.
 
     This offers an easy import functionality of your data from CSV files.
@@ -217,13 +224,9 @@ def read_csv_as_dicts(
 
 
 def write_dicts_as_csv(
-    data: dict,
-    fieldnames: list,
-    filename: str,
-    delimiter: str = ",",
-    quotechar: str = '"',
+    data: dict, fieldnames: list, filename: str, delimiter: str = ","
 ) -> None:
-    """Write :class:`dict` to a CSV file
+    """Write :class:`dict` to a CSV file.
 
     This offers an easy export functionality of your data to a CSV files.
     See more at `csv <https://docs.python.org/3/library/csv.html>`_.
@@ -243,14 +246,14 @@ def write_dicts_as_csv(
 
     """
     with open(filename, "w", newline="") as csvfile:
-        writer = DictWriter(csvfile, fieldnames=fieldnames, delimiter=delimiter)
-        writer.writeheader()
+        csv_writer = DictWriter(csvfile, fieldnames=fieldnames, delimiter=delimiter)
+        csv_writer.writeheader()
 
         for d in data:
             for key, val in d.items():
                 if isinstance(val, dict) or isinstance(val, list):
                     d[key] = dumps(val)
-            writer.writerow(d)
+            csv_writer.writerow(d)
 
 
 def is_valid_doi(doi: str) -> bool:
@@ -274,8 +277,7 @@ def is_valid_doi(doi: str) -> bool:
         r"^10.1021/\w\w\d+$",
         r"^10.1207\/[\w\d]+\&\d+_\d+$",
     ]
-    is_valid = False
     for pat in patterns:
         if re.match(pat, doi, re.IGNORECASE):
-            is_valid = True
-    return is_valid
+            return True
+    return False

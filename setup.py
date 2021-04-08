@@ -4,10 +4,12 @@
 import codecs
 import os
 import re
-from setuptools.command.test import test as TestCommand
+import sys
+from typing import List
+
 from setuptools import find_packages
 from setuptools import setup
-import sys
+from setuptools.command.test import test as TestCommand
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
@@ -45,8 +47,7 @@ class Tox(TestCommand):
         # import here, cause outside the eggs aren't loaded
         import tox
 
-        errcode = tox.cmdline(self.test_args)
-        sys.exit(errcode)
+        tox.cmdline(self.test_args)
 
 
 INSTALL_REQUIREMENTS = [
@@ -64,7 +65,7 @@ INSTALL_REQUIREMENTS = [
     "pydantic==1.7.2",
 ]
 
-TESTS_REQUIREMENTS = []
+TESTS_REQUIREMENTS: List = []
 
 CLASSIFIERS = [
     # How mature is this project? Common values are

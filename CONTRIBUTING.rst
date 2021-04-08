@@ -219,7 +219,7 @@ you created the branch, check the section on
 :ref:`updating a PR <contributing_changes_update-pull-request>`.
 
 
-From here, you now can move forward to 
+From here, you now can move forward to
 
 - contribute to the documentation (see below)
 - contribute to the :ref:`code base <contributing_code>`
@@ -289,7 +289,7 @@ to ``upstream/develop``, so you have to branch-off from it too.
 There is one exception: If you
 want to suggest a change to the docs in the folder
 ``app/docs/`` (e. g. fix a typo in
-:ref:`User Guide - Basic Usage <user_basic-usage>`),
+:ref:`Installation <user_installation>`),
 you can also pull to ``upstream/master``. This means, you have also to
 branch-off from the ``master`` branch.
 
@@ -429,7 +429,7 @@ Browsersync with gulp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To sync the browser after file-changes we use
-`gulp.js <https://gulpjs.com/>`_ together with 
+`gulp.js <https://gulpjs.com/>`_ together with
 `browsersync <https://www.browsersync.io/>`_.
 
 First, install the required node packages with
