@@ -5,6 +5,7 @@ import codecs
 import os
 import re
 import sys
+from typing import List
 
 from setuptools import find_packages
 from setuptools import setup
@@ -46,8 +47,7 @@ class Tox(TestCommand):
         # import here, cause outside the eggs aren't loaded
         import tox
 
-        errcode = tox.cmdline(self.test_args)
-        sys.exit(errcode)
+        tox.cmdline(self.test_args)
 
 
 INSTALL_REQUIREMENTS = [
@@ -65,7 +65,7 @@ INSTALL_REQUIREMENTS = [
     "pydantic==1.7.2",
 ]
 
-TESTS_REQUIREMENTS = []
+TESTS_REQUIREMENTS: List = []
 
 CLASSIFIERS = [
     # How mature is this project? Common values are

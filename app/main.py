@@ -27,7 +27,6 @@ from app.db import create_ncbi_urls
 from app.db import create_unpaywall_urls
 from app.db import dev
 from app.db import drop_db
-from app.db import get_config
 from app.db import get_fb_data
 from app.db import import_basedata
 from app.db import init_db
@@ -43,7 +42,7 @@ def create_app() -> Flask:
     print("* Start FHE Collector...")
 
     app = Flask("fhe_collector", root_path=ROOT_DIR)
-    env_name = os.getenv("FLASK_ENV")
+    env_name = os.getenv("FLASK_ENV", "default")
     config = get_config_class(env_name)
     app.config.from_object(config())
     config.init_app(app)

@@ -14,11 +14,11 @@ from app.models import Request
 from app.models import Url
 
 
-DatabaseModels = Type[Union[Import, Doi, Url, Request, FBRequest]]
+DatabaseModelTypes = Type[Union[Import, Doi, Url, Request, FBRequest]]
 
 
 def get_all(
-    db: Session, model: DatabaseModels, skip: int = 0, limit: int = 100,
+    db: Session, model: DatabaseModelTypes, skip: int = 0, limit: int = 100,
 ) -> Query:
     """Get all entries of a model.
 
@@ -42,7 +42,7 @@ def get_all(
     return db.session.query(model).offset(skip).limit(limit).all()
 
 
-def get_first(db: Session, model: DatabaseModels, kwargs: dict) -> Query:
+def get_first(db: Session, model: DatabaseModelTypes, kwargs: dict) -> Query:
     """Get first entry of a model.
 
     Parameters
@@ -62,8 +62,8 @@ def get_first(db: Session, model: DatabaseModels, kwargs: dict) -> Query:
 
 
 def create_entity(
-    db: Session, model: DatabaseModels, kwargs: dict = {}
-) -> DatabaseModels:
+    db: Session, model: DatabaseModelTypes, kwargs: dict = {}
+) -> DatabaseModelTypes:
     """Create one entry of a model.
 
     Parameters
@@ -85,8 +85,8 @@ def create_entity(
 
 
 def create_entities(
-    db: Session, model: DatabaseModels, iterable: list, kwargs: dict = {},
-) -> DatabaseModels:
+    db: Session, model: DatabaseModelTypes, iterable: list, kwargs: dict = {},
+) -> DatabaseModelTypes:
     """Create entities of a model.
 
     Parameters

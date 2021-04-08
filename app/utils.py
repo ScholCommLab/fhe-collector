@@ -5,6 +5,7 @@ import re
 from csv import DictReader
 from csv import DictWriter
 from csv import reader
+from csv import writer
 from json import dump
 from json import dumps
 from json import load
@@ -171,9 +172,9 @@ def write_csv(
 
     """
     with open(filename, "w", newline=newline, encoding=encoding) as csvfile:
-        writer = writer(csvfile, delimiter=delimiter, quotechar=quotechar)
+        csv_writer = writer(csvfile, delimiter=delimiter, quotechar=quotechar)
         for row in data:
-            writer.writerow(row)
+            csv_writer.writerow(row)
 
 
 def read_csv_as_dicts(
