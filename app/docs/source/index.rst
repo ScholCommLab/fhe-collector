@@ -11,8 +11,8 @@ Release v\ |version|.
 .. image:: https://readthedocs.org/projects/fhe-collector/badge/?version=latest
     :target: https://fhe-collector.readthedocs.io/en/latest
 
-.. image:: https://coveralls.io/repos/github/ScholCommLab/fhe-collector/badge.svg
-    :target: https://coveralls.io/github/ScholCommLab/fhe-collector
+.. image:: https://codecov.io/gh/ScholCommLab/fhe-collector/branch/master/graph/badge.svg?token=XNVQCBL6DB
+    :target: https://codecov.io/gh/ScholCommLab/fhe-collector
 
 .. image:: https://img.shields.io/github/license/ScholCommLab/fhe-collector.svg
     :target: https://opensource.org/licenses/MIT
